@@ -1,8 +1,9 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PropertyCard from '@/components/PropertyCard';
+import { fetchProperties } from '@/lib/properties';
 import { PROPERTIES, AREAS } from '@/lib/data';
 import styles from './page.module.css';
 
@@ -43,8 +44,18 @@ export default function HomePage() {
   const [searchArea, setSearchArea] = useState('');
   const [searchType, setSearchType] = useState('');
   const [searchBudget, setSearchBudget] = useState('');
+  const [featuredProperties, setFeaturedProperties] = useState(PROPERTIES.filter(p => p.featured));
 
-  const featuredProperties = PROPERTIES.filter(p => p.featured);
+  useEffect(() => {
+    fetchProperties({ sortBy: 'featured' })
+      .then(data => {
+        if (data && data.length > 0) {
+          const featured = data.filter(p => p.featured);
+          setFeaturedProperties(featured.length > 0 ? featured : data.slice(0, 4));
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const handleSearch = (e) => {
     e.preventDefault();

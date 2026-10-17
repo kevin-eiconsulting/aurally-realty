@@ -4,6 +4,7 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { fetchPropertyById } from '@/lib/properties';
+import { apiFetch } from '@/lib/api';
 import { formatPrice } from '@/lib/data';
 import styles from './page.module.css';
 
@@ -82,8 +83,21 @@ export default function PropertyDetailPage() {
   const ownerPhone = property.phone || '9876543210';
   const cleanPhone = ownerPhone.replace(/\D/g, '');
 
-  const handleSendInquiry = (e) => {
+  const handleSendInquiry = async (e) => {
     e.preventDefault();
+    try {
+      await apiFetch('/enquiries', {
+        method: 'POST',
+        body: JSON.stringify({
+          property_id: property.id,
+          contact_name: inquiryName,
+          contact_phone: inquiryPhone,
+          message: `Inquiry for ${property.title} in ${property.area}`
+        })
+      });
+    } catch (err) {
+      console.warn('Enquiry API submission error:', err.message);
+    }
     setContactSuccess(true);
   };
 

@@ -1,12 +1,12 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import PropertyCard from '@/components/PropertyCard';
 import { fetchProperties } from '@/lib/properties';
 import { AREAS } from '@/lib/data';
 import styles from './page.module.css';
 
-export default function BuyPage() {
+function BuyPageContent() {
   const searchParams = useSearchParams();
   const [filters, setFilters] = useState({ area: '', type: '', beds: '', budget: '' });
   const [sortBy, setSortBy] = useState('featured');
@@ -134,5 +134,13 @@ export default function BuyPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function BuyPage() {
+  return (
+    <Suspense fallback={<div className="container" style={{ padding: '80px 0', textAlign: 'center' }}><div className="spinner" /></div>}>
+      <BuyPageContent />
+    </Suspense>
   );
 }

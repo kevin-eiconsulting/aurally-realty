@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:api": "node backend/src/server.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
@@ -16,6 +17,6 @@
   },
   "devDependencies": {
     "eslint": "^9",
-    "eslint-config-next": "16.4.2"
+    "eslint-config-next": "^14.2.35"
   }
 }
