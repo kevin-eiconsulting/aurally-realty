@@ -1,0 +1,77 @@
+.page { padding-top: 70px; background: #f9fafb; }
+
+.pageHero {
+  background: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  padding: 44px 0 40px;
+  margin-bottom: 0;
+}
+.pageTitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(28px, 4vw, 44px);
+  font-weight: 800; color: #111827; line-height: 1.2; margin: 14px 0 16px;
+}
+.pageTitle span { color: #f26b2b; }
+.pageSub { color: #6b7280; font-size: 15px; max-width: 560px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 24px;
+  padding: 56px 0;
+}
+@media (max-width: 900px) { .grid { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+
+.serviceCard {
+  background: white;
+  border-radius: 20px;
+  padding: 32px 28px;
+  border: 1px solid #e5e7eb;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  transition: all 0.3s ease;
+  display: flex; flex-direction: column; gap: 0;
+}
+.serviceCard:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 48px rgba(0,0,0,0.12);
+  border-color: var(--color, #f26b2b);
+}
+
+.serviceIcon {
+  font-size: 44px; margin-bottom: 18px;
+  display: flex; align-items: center; justify-content: center;
+  width: 72px; height: 72px;
+  background: color-mix(in srgb, var(--color, #f26b2b) 12%, white);
+  border-radius: 18px;
+}
+.serviceTitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 20px; font-weight: 700; color: #1a1a2e; margin-bottom: 10px;
+}
+.serviceDesc { font-size: 14px; color: #6b7280; line-height: 1.65; margin-bottom: 20px; }
+
+.featureList { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; flex: 1; }
+.featureList li {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 13px; color: #374151; font-weight: 500;
+}
+
+.serviceBtn {
+  width: 100%; padding: 13px;
+  background: color-mix(in srgb, var(--color, #f26b2b) 10%, white);
+  color: var(--color, #f26b2b);
+  border: 2px solid var(--color, #f26b2b);
+  border-radius: 10px; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s ease; font-family: 'Inter', sans-serif;
+}
+.serviceBtn:hover { background: var(--color, #f26b2b); color: white; }
+
+/* Contact CTA */
+.contactCta {
+  background: linear-gradient(135deg, #18181b, #27272a);
+  border-radius: 24px; padding: 52px; text-align: center; margin-bottom: 60px;
+}
+.contactCta h2 { font-family: 'Outfit', sans-serif; font-size: 28px; font-weight: 800; color: white; margin-bottom: 10px; }
+.contactCta p { color: rgba(255,255,255,0.6); font-size: 15px; margin-bottom: 28px; }
+.contactBtns { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }

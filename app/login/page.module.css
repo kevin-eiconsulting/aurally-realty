@@ -1,0 +1,124 @@
+.page { padding-top: 70px; min-height: calc(100vh - 70px); }
+
+.split {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: calc(100vh - 70px);
+}
+@media (max-width: 768px) {
+  .split { grid-template-columns: 1fr; }
+  .leftPanel { display: none; }
+}
+
+/* Left Panel */
+.leftPanel {
+  background: linear-gradient(135deg, #18181b 0%, #27272a 100%);
+  display: flex; align-items: center; justify-content: center;
+  padding: 60px 48px;
+  position: relative; overflow: hidden;
+}
+.leftPanel::before {
+  content: '';
+  position: absolute; right: -100px; top: -100px;
+  width: 350px; height: 350px;
+  background: radial-gradient(circle, rgba(242,107,43,0.18) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.leftPanel::after {
+  content: '';
+  position: absolute; left: -60px; bottom: -60px;
+  width: 250px; height: 250px;
+  background: radial-gradient(circle, rgba(99,102,241,0.12) 0%, transparent 70%);
+  border-radius: 50%;
+}
+.leftContent { position: relative; z-index: 1; max-width: 400px; }
+
+.logo {
+  display: flex; align-items: center; gap: 10px;
+  margin-bottom: 40px; font-family: 'Outfit', sans-serif;
+  font-size: 20px; color: white;
+}
+.logo b { color: #f26b2b; }
+.logoIcon {
+  width: 40px; height: 40px;
+  background: linear-gradient(135deg, #f26b2b, #d9581a);
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+}
+
+.leftTitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: clamp(24px, 3vw, 34px); font-weight: 800;
+  color: white; line-height: 1.25; margin-bottom: 14px;
+}
+.leftSub { font-size: 15px; color: rgba(255,255,255,0.55); line-height: 1.7; margin-bottom: 36px; }
+
+.leftFeatures { display: flex; flex-direction: column; gap: 14px; }
+.leftFeature {
+  display: flex; align-items: center; gap: 10px;
+  padding: 14px 18px;
+  background: rgba(255,255,255,0.07);
+  border-radius: 12px; border: 1px solid rgba(255,255,255,0.1);
+  font-size: 14px; color: rgba(255,255,255,0.8); font-weight: 500;
+  backdrop-filter: blur(4px);
+}
+
+/* Right Panel */
+.rightPanel {
+  display: flex; align-items: center; justify-content: center;
+  padding: 48px 40px;
+  background: white;
+}
+.formCard { width: 100%; max-width: 400px; }
+
+.formTitle {
+  font-family: 'Outfit', sans-serif;
+  font-size: 30px; font-weight: 800; color: #1a1a2e; margin-bottom: 6px;
+}
+.formSub { font-size: 15px; color: #6b7280; margin-bottom: 32px; }
+
+/* Form inputs with prefix */
+.inputWrap { position: relative; display: flex; align-items: stretch; }
+.inputPrefix {
+  display: flex; align-items: center; padding: 0 14px;
+  background: #f3f4f6; border: 2px solid #e5e7eb; border-right: none;
+  border-radius: 12px 0 0 12px;
+  font-size: 14px; font-weight: 600; color: #374151; white-space: nowrap;
+}
+.inputWithPrefix {
+  border-radius: 0 12px 12px 0 !important;
+  flex: 1;
+}
+.inputWithToggle { padding-right: 48px !important; flex: 1; }
+.togglePass {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  background: none; border: none; cursor: pointer; font-size: 16px;
+}
+
+.passwordHeader { display: flex; align-items: center; justify-content: space-between; }
+.forgotLink { font-size: 13px; color: #f26b2b; font-weight: 500; }
+.forgotLink:hover { text-decoration: underline; }
+
+.errorMsg {
+  background: #fef2f2; color: #dc2626; border: 1px solid #fecaca;
+  border-radius: 10px; padding: 12px 14px; font-size: 13px; font-weight: 500; margin-bottom: 16px;
+}
+
+.submitBtn { width: 100%; margin-top: 4px; font-size: 16px; padding: 15px; }
+
+.divider {
+  text-align: center; position: relative; margin: 24px 0;
+  color: #d1d5db; font-size: 13px;
+}
+.divider::before {
+  content: '';
+  position: absolute; left: 0; top: 50%; width: 100%; height: 1px; background: #e5e7eb; z-index: 0;
+}
+.divider span { position: relative; z-index: 1; background: white; padding: 0 12px; }
+
+.signupPrompt { text-align: center; font-size: 14px; color: #6b7280; margin-bottom: 10px; }
+.signupLink { color: #f26b2b; font-weight: 600; }
+.signupLink:hover { text-decoration: underline; }
+.agentLink { text-align: center; font-size: 13px; color: #9ca3af; }
+
+.form { margin-bottom: 0; }
