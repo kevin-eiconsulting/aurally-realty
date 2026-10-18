@@ -10,6 +10,8 @@ const navLinks = [
   { label: 'Buy', href: '/buy' },
   { label: 'Rent', href: '/rent' },
   { label: 'Sell', href: '/sell' },
+  { label: 'Materials', href: '/materials' },
+  { label: 'Experts', href: '/experts' },
   { label: 'Services', href: '/services' },
 ];
 
@@ -589,14 +591,14 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
           <div className={styles.rightGroup}>
             {user ? (
               <div className={styles.userInfo}>
-                <span className={styles.userLabel}>
+                <Link href="/account" className={styles.userLabel} title="View My Account & Dashboard">
                   👤 {user.username}
-                  {user.isAdmin && (
-                    <Link href="/admin" className={styles.adminBadge}>
-                      Admin
-                    </Link>
-                  )}
-                </span>
+                </Link>
+                {user.isAdmin && (
+                  <Link href="/admin" className={styles.adminBadge}>
+                    Admin
+                  </Link>
+                )}
                 <button onClick={handleLogout} className={styles.logoutBtn}>
                   Logout
                 </button>
@@ -674,7 +676,14 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
           </Link>
         ))}
         <div className={styles.mobileDivider} />
-        <Link href="/login" className={styles.mobileLink}>Login</Link>
+        {user ? (
+          <>
+            <Link href="/account" className={styles.mobileLink}>👤 My Account ({user.username})</Link>
+            <button onClick={handleLogout} className={styles.mobileLogoutBtn}>Logout</button>
+          </>
+        ) : (
+          <Link href="/login" className={styles.mobileLink}>Login</Link>
+        )}
         <Link href="/sell" className={styles.mobilePostBtn}>+ Post Property</Link>
       </div>
     </header>

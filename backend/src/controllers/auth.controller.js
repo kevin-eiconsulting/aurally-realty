@@ -169,6 +169,220 @@ export const getCurrentUser = async (req, res) => {
   });
 };
 
+// GET /api/auth/profile
+export const getUserProfile = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const userRes = await pool.query(`
+      SELECT u.id, u.full_name, u.phone, u.email, u.account_status, u.created_at, u.last_login_at,
+             COALESCE(array_agg(r.role_key) FILTER (WHERE r.role_key IS NOT NULL), '{}') as roles
+      FROM users u
+      LEFT JOIN user_roles ur ON u.id = ur.user_id
+      LEFT JOIN roles r ON ur.role_id = r.id
+      WHERE u.id = $1
+      GROUP BY u.id;
+    `, [userId]);
+
+    if (userRes.rows.length === 0) {
+      return res.status(404).json({ error: 'User not found.' });
+    }
+
+    const user = userRes.rows[0];
+
+    // Counts
+    const [propCount, enqCount, favCount, providerRes] = await Promise.all([
+      pool.query('SELECT count(*) as count FROM properties WHERE owner_user_id = $1;', [userId]),
+      pool.query('SELECT count(*) as count FROM enquiries WHERE created_by_user_id = $1;', [userId]),
+      pool.query('SELECT count(*) as count FROM favourites WHERE user_id = $1;', [userId]),
+      pool.query('SELECT * FROM service_providers WHERE user_id = $1 LIMIT 1;', [userId])
+    ]);
+
+    return res.json({
+      id: user.id,
+      username: user.full_name,
+      full_name: user.full_name,
+      email: user.email,
+      phone: user.phone,
+      account_status: user.account_status,
+      created_at: user.created_at,
+      last_login_at: user.last_login_at,
+      roles: user.roles,
+      isAdmin: user.roles.includes('admin'),
+      stats: {
+        propertiesCount: parseInt(propCount.rows[0]?.count || 0),
+        enquiriesCount: parseInt(enqCount.rows[0]?.count || 0),
+        favouritesCount: parseInt(favCount.rows[0]?.count || 0)
+      },
+      providerProfile: providerRes.rows[0] || null
+    });
+  } catch (err) {
+    console.error('Error fetching user profile:', err);
+    return res.status(500).json({ error: 'Failed to fetch user profile.' });
+  }
+};
+
+// PUT /api/auth/profile
+export const updateProfile = async (req, res) => {
+  const userId = req.user.id;
+  const { full_name, email, phone, currentPassword, newPassword } = req.body;
+
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+
+    // Verify current user exists
+    const userRes = await client.query('SELECT id, password_hash FROM users WHERE id = $1;', [userId]);
+    if (userRes.rows.length === 0) {
+      await client.query('ROLLBACK');
+      return res.status(404).json({ error: 'User not found.' });
+    }
+    const currentUser = userRes.rows[0];
+
+    // Check unique email / phone conflicts
+    const cleanPhone = phone ? phone.replace(/\D/g, '') : null;
+    if (email || cleanPhone) {
+      const conflictRes = await client.query(`
+        SELECT id FROM users 
+        WHERE id != $1 AND (
+          (email IS NOT NULL AND LOWER(email) = LOWER($2))
+          OR (phone IS NOT NULL AND phone = $3)
+        );
+      `, [userId, email || '', cleanPhone || '']);
+
+      if (conflictRes.rows.length > 0) {
+        await client.query('ROLLBACK');
+        return res.status(409).json({ error: 'Email or phone number is already in use by another account.' });
+      }
+    }
+
+    // Password change verification
+    let newHash = null;
+    if (newPassword) {
+      if (newPassword.length < 6) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: 'New password must be at least 6 characters.' });
+      }
+      if (currentUser.password_hash && currentPassword) {
+        const isMatch = await bcrypt.compare(currentPassword, currentUser.password_hash);
+        if (!isMatch) {
+          await client.query('ROLLBACK');
+          return res.status(401).json({ error: 'Current password does not match.' });
+        }
+      }
+      newHash = await bcrypt.hash(newPassword, 10);
+    }
+
+    // Perform update
+    const updateRes = await client.query(`
+      UPDATE users SET
+        full_name = COALESCE($1, full_name),
+        email = COALESCE($2, email),
+        phone = COALESCE($3, phone),
+        password_hash = COALESCE($4, password_hash),
+        updated_at = NOW()
+      WHERE id = $5
+      RETURNING id, full_name, email, phone, updated_at;
+    `, [full_name?.trim() || null, email?.trim() || null, cleanPhone, newHash, userId]);
+
+    await client.query('COMMIT');
+
+    const updated = updateRes.rows[0];
+    return res.json({
+      success: true,
+      message: 'Profile updated successfully.',
+      user: {
+        id: updated.id,
+        username: updated.full_name,
+        full_name: updated.full_name,
+        email: updated.email,
+        phone: updated.phone,
+        roles: req.user.roles,
+        isAdmin: req.user.isAdmin
+      }
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error updating profile:', err);
+    return res.status(500).json({ error: 'Failed to update profile.' });
+  } finally {
+    client.release();
+  }
+};
+
+// GET /api/auth/favourites
+export const getMyFavourites = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const queryStr = `
+      SELECT 
+        f.id AS favourite_id,
+        f.created_at AS favourited_at,
+        p.id,
+        p.title,
+        p.slug,
+        p.price,
+        p.listing_type,
+        p.property_type,
+        p.built_up_area,
+        p.bedrooms,
+        p.bathrooms,
+        p.address_line1,
+        loc.name AS area_name,
+        COALESCE(pm.file_url, 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80') AS image
+      FROM favourites f
+      JOIN properties p ON f.property_id = p.id
+      LEFT JOIN locations loc ON p.location_id = loc.id
+      LEFT JOIN LATERAL (
+        SELECT file_url FROM property_media 
+        WHERE property_id = p.id 
+        ORDER BY is_primary DESC, sort_order ASC 
+        LIMIT 1
+      ) pm ON true
+      WHERE f.user_id = $1
+      ORDER BY f.created_at DESC;
+    `;
+
+    const { rows } = await pool.query(queryStr, [userId]);
+    return res.json(rows);
+  } catch (err) {
+    console.error('Error fetching favourites:', err);
+    return res.status(500).json({ error: 'Failed to fetch saved properties.' });
+  }
+};
+
+// POST /api/auth/favourites/toggle
+export const toggleFavourite = async (req, res) => {
+  const userId = req.user.id;
+  const { property_id, service_listing_id } = req.body;
+
+  if (!property_id && !service_listing_id) {
+    return res.status(400).json({ error: 'Target ID required.' });
+  }
+
+  try {
+    const existing = await pool.query(
+      'SELECT id FROM favourites WHERE user_id = $1 AND property_id = $2;',
+      [userId, property_id ? Number(property_id) : null]
+    );
+
+    if (existing.rows.length > 0) {
+      await pool.query('DELETE FROM favourites WHERE id = $1;', [existing.rows[0].id]);
+      return res.json({ favourited: false, message: 'Removed from saved properties.' });
+    } else {
+      await pool.query(
+        'INSERT INTO favourites (user_id, property_id) VALUES ($1, $2);',
+        [userId, Number(property_id)]
+      );
+      return res.json({ favourited: true, message: 'Added to saved properties.' });
+    }
+  } catch (err) {
+    console.error('Error toggling favourite:', err);
+    return res.status(500).json({ error: 'Failed to update favourite.' });
+  }
+};
+
 // POST /api/auth/logout
 export const logout = (req, res) => {
   res.clearCookie('token', cookieOptions);

@@ -11,6 +11,9 @@ import authRoutes from './routes/auth.routes.js';
 import propertiesRoutes from './routes/properties.routes.js';
 import enquiriesRoutes from './routes/enquiries.routes.js';
 import adminRoutes from './routes/admin.routes.js';
+import materialsRouter from './routes/materials.routes.js';
+import servicesRouter from './routes/services.routes.js';
+import expertsRouter from './routes/experts.routes.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -59,6 +62,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/properties', propertiesRoutes);
 app.use('/api/enquiries', enquiriesRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/materials', materialsRouter);
+app.use('/api/services', servicesRouter);
+app.use('/api/experts', expertsRouter);
 
 // 404 Handler
 app.use((req, res) => {

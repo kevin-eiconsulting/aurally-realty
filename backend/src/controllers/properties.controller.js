@@ -68,12 +68,19 @@ export const getProperties = async (req, res) => {
       maxPrice,
       sortBy = 'featured',
       q,
+      ownerId,
       limit = 50,
       offset = 0
     } = req.query;
 
-    const conditions = ["p.listing_status = 'published'"];
+    const conditions = ownerId ? [] : ["p.listing_status = 'published'"];
     const params = [];
+
+    // Filter by owner
+    if (ownerId) {
+      params.push(Number(ownerId));
+      conditions.push(`p.owner_user_id = $${params.length}`);
+    }
 
     // Filter by listing type
     if (status) {
@@ -416,7 +423,7 @@ export const createProperty = async (req, res) => {
 
     const createdFormatted = formatPropertyRow(
       { ...newProp, area_name: area, owner_name: req.user?.name || 'Property Owner', owner_phone: phone },
-      { [newProp.id]: [{ file_url: imgUrl, is_primary: true }] },
+      { [newProp.id]: [{ file_url: imgList[0], is_primary: true }] },
       { [newProp.id]: { floor, facing, age, furnishing, featured: 'false', verified: 'false' } }
     );
 
@@ -429,3 +436,88 @@ export const createProperty = async (req, res) => {
     client.release();
   }
 };
+
+// GET /api/properties/user/my
+// Returns all listings created by the authenticated user
+export const getMyProperties = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const queryStr = `
+      SELECT p.*,
+             loc.name as area_name,
+             COALESCE(CASE WHEN loc.location_type = 'city' THEN loc.name WHEN parent_loc.location_type = 'city' THEN parent_loc.name ELSE 'Chennai' END, 'Chennai') as city_name,
+             u.full_name as owner_name,
+             u.phone as owner_phone
+      FROM properties p
+      LEFT JOIN locations loc ON p.location_id = loc.id
+      LEFT JOIN locations parent_loc ON loc.parent_id = parent_loc.id
+      LEFT JOIN users u ON p.owner_user_id = u.id
+      WHERE p.owner_user_id = $1
+      ORDER BY p.created_at DESC;
+    `;
+    const { rows } = await pool.query(queryStr, [userId]);
+    if (rows.length === 0) {
+      return res.json([]);
+    }
+
+    const propertyIds = rows.map(r => r.id);
+    const [mediaRes, featuresRes] = await Promise.all([
+      pool.query(
+        `SELECT property_id, file_url, is_primary, sort_order 
+         FROM property_media 
+         WHERE property_id = ANY($1) 
+         ORDER BY sort_order ASC;`,
+        [propertyIds]
+      ),
+      pool.query(
+        `SELECT property_id, feature_key, feature_value 
+         FROM property_features 
+         WHERE property_id = ANY($1);`,
+        [propertyIds]
+      )
+    ]);
+
+    const mediaMap = {};
+    for (const m of mediaRes.rows) {
+      if (!mediaMap[m.property_id]) mediaMap[m.property_id] = [];
+      mediaMap[m.property_id].push(m);
+    }
+
+    const featuresMap = {};
+    for (const f of featuresRes.rows) {
+      if (!featuresMap[f.property_id]) featuresMap[f.property_id] = {};
+      featuresMap[f.property_id][f.feature_key] = f.feature_value;
+    }
+
+    const formatted = rows.map(r => formatPropertyRow(r, mediaMap, featuresMap));
+    return res.json(formatted);
+  } catch (err) {
+    console.error('Error in getMyProperties:', err);
+    return res.status(500).json({ error: 'Failed to fetch user properties.' });
+  }
+};
+
+// DELETE /api/properties/:id
+export const deleteProperty = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  const isAdmin = req.user.isAdmin;
+
+  try {
+    const propRes = await pool.query('SELECT owner_user_id FROM properties WHERE id = $1;', [Number(id)]);
+    if (propRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+
+    if (!isAdmin && Number(propRes.rows[0].owner_user_id) !== Number(userId)) {
+      return res.status(403).json({ error: 'Forbidden: You can only delete your own properties.' });
+    }
+
+    await pool.query('DELETE FROM properties WHERE id = $1;', [Number(id)]);
+    return res.json({ success: true, message: 'Property deleted successfully.' });
+  } catch (err) {
+    console.error('Error deleting property:', err);
+    return res.status(500).json({ error: 'Failed to delete property.' });
+  }
+};
+
