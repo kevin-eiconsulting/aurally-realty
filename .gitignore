@@ -38,6 +38,7 @@ yarn-error.log*
 !.env*.example
 backend/.env
 !backend/.env.example
+env (1)
 
 # user data
 additional_data/

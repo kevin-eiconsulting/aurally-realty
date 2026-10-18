@@ -10,7 +10,7 @@ export default function ConditionalLayout({ children }) {
 
   return (
     <>
-      {!isAdmin && <Navbar />}
+      {!isAdmin && <Navbar hideBottomBar={isAuth} logoOnly={isAuth} />}
       <main>{children}</main>
       {!isAdmin && !isAuth && <Footer />}
     </>

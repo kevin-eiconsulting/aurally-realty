@@ -28,6 +28,7 @@ const formatPropertyRow = (row, mediaMap = {}, featuresMap = {}) => {
     title: row.title,
     slug: row.slug,
     area: row.area_name || 'Chennai',
+    city: row.city_name || 'Chennai',
     type: row.property_type?.toLowerCase() || 'apartment',
     status: row.listing_type === 'rent' ? 'for-rent' : 'for-sale',
     listingStatus: row.listing_status,
@@ -59,6 +60,7 @@ export const getProperties = async (req, res) => {
     const {
       status,       // 'for-sale' | 'for-rent'
       area,         // locality name
+      city,         // city name (e.g. Coimbatore, Chennai)
       type,         // 'apartment', 'villa', etc.
       beds,         // 1, 2, 3, 4
       budget,       // 30, 60, 100, 100+
@@ -90,6 +92,18 @@ export const getProperties = async (req, res) => {
     if (area && area !== 'all') {
       params.push(`%${area.toLowerCase()}%`);
       conditions.push(`LOWER(loc.name) LIKE $${params.length}`);
+    }
+
+    // Filter by city
+    if (city && city !== 'all' && city !== 'All Tamil Nadu') {
+      params.push(`%${city.toLowerCase()}%`);
+      const cIdx = params.length;
+      conditions.push(`(
+        LOWER(parent_loc.name) LIKE $${cIdx} 
+        OR (loc.location_type = 'city' AND LOWER(loc.name) LIKE $${cIdx})
+        OR LOWER(p.title) LIKE $${cIdx}
+        OR LOWER(p.description) LIKE $${cIdx}
+      )`);
     }
 
     // Filter by bedrooms
@@ -128,10 +142,12 @@ export const getProperties = async (req, res) => {
     const queryStr = `
       SELECT p.*,
              loc.name as area_name,
+             COALESCE(CASE WHEN loc.location_type = 'city' THEN loc.name WHEN parent_loc.location_type = 'city' THEN parent_loc.name ELSE 'Chennai' END, 'Chennai') as city_name,
              u.full_name as owner_name,
              u.phone as owner_phone
       FROM properties p
       LEFT JOIN locations loc ON p.location_id = loc.id
+      LEFT JOIN locations parent_loc ON loc.parent_id = parent_loc.id
       LEFT JOIN users u ON p.owner_user_id = u.id
       ${whereClause}
       ${orderClause}

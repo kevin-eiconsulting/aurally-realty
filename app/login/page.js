@@ -56,11 +56,21 @@ export default function LoginPage() {
               </div>
               <span>Aurally<b>Realty</b></span>
             </Link>
-            <h2 className={styles.leftTitle}>Find Your Dream Home in Chennai</h2>
-            <p className={styles.leftSub}>Access thousands of verified properties, post listings for free, and connect with genuine buyers & tenants.</p>
+            <h2 className={styles.leftTitle}>Things you Can Do with Aurally Realty Account</h2>
+            <p className={styles.leftSub}>Tamil Nadu&apos;s most trusted real estate platform</p>
             <div className={styles.leftFeatures}>
-              {['🏠 12,000+ Verified Listings', '🔐 Secure & Private', '📱 Post Property for FREE', '⭐ Trusted by 8,500+ Families'].map(f => (
-                <div key={f} className={styles.leftFeature}>{f}</div>
+              {[
+                'Post your property for FREE',
+                'Reach thousands of genuine buyers & tenants',
+                'Get instant enquiries by Phone & Email',
+                'Verified listings across Tamil Nadu',
+                'Track property views & responses online',
+                'Connect directly — zero brokerage options'
+              ].map(f => (
+                <div key={f} className={styles.leftFeature}>
+                  <span style={{ color: '#f26b2b', fontWeight: 700, fontSize: '16px' }}>✓</span>
+                  {f}
+                </div>
               ))}
             </div>
           </div>

@@ -17,7 +17,7 @@ export default function Footer() {
             <span className={styles.logoText}>Aurally<span>Realty</span></span>
           </div>
           <p className={styles.tagline}>
-            Chennai&apos;s most trusted real estate platform. Find, rent, buy or sell your dream property with ease.
+            Tamil Nadu&apos;s most trusted real estate platform. Find, rent, buy or sell your dream property across all major cities.
           </p>
           <div className={styles.socials}>
             {['facebook', 'instagram', 'twitter', 'youtube'].map(s => (
@@ -52,10 +52,10 @@ export default function Footer() {
         </div>
 
         <div className={styles.linksGroup}>
-          <h4>Chennai Areas</h4>
+          <h4>Top Cities</h4>
           <ul>
-            {['Anna Nagar', 'T. Nagar', 'Velachery', 'OMR', 'Adyar', 'Porur'].map(area => (
-              <li key={area}><Link href={`/buy?area=${area}`}>{area}</Link></li>
+            {['Chennai', 'Coimbatore', 'Madurai', 'Trichy', 'Salem', 'Hosur'].map(city => (
+              <li key={city}><Link href={`/buy?city=${city}`}>{city}</Link></li>
             ))}
           </ul>
         </div>
