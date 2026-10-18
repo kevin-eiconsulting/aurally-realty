@@ -1,8 +1,13 @@
 .page {
-  padding-top: 98px;
+  padding-top: 76px;
   background-color: #f8fafc;
   min-height: 100vh;
   padding-bottom: 80px;
+}
+@media (max-width: 860px) {
+  .page {
+    padding-top: 126px;
+  }
 }
 
 /* Breadcrumb Bar */
@@ -22,10 +27,12 @@
 }
 
 .bcLink {
-  color: #3b82f6;
+  color: #64748b;
   text-decoration: none;
+  transition: color 0.15s ease;
 }
 .bcLink:hover {
+  color: #f26b2b;
   text-decoration: underline;
 }
 

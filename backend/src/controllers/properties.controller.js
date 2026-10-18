@@ -282,7 +282,8 @@ export const createProperty = async (req, res) => {
       age = 'New',
       description = '',
       phone,
-      image
+      image,
+      images
     } = req.body;
 
     if (!title || !price || !area) {
@@ -317,8 +318,9 @@ export const createProperty = async (req, res) => {
     if (locRes.rows.length > 0) {
       locationId = locRes.rows[0].id;
     } else {
-      // Create new locality under Chennai
-      const cityRes = await client.query("SELECT id FROM locations WHERE name = 'Chennai' LIMIT 1;");
+      // Create new locality under selected city (default to Chennai)
+      const targetCity = (req.body.city || 'Chennai').trim();
+      const cityRes = await client.query("SELECT id FROM locations WHERE LOWER(name) = LOWER($1) LIMIT 1;", [targetCity]);
       const parentId = cityRes.rows[0]?.id || null;
       const newLoc = await client.query(
         `INSERT INTO locations (parent_id, location_type, name)
@@ -379,12 +381,17 @@ export const createProperty = async (req, res) => {
     const newProp = propInsertRes.rows[0];
 
     // 7. Insert media
-    const imgUrl = image || 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80';
-    await client.query(
-      `INSERT INTO property_media (property_id, media_type, file_url, sort_order, is_primary)
-       VALUES ($1, 'image', $2, 0, TRUE);`,
-      [newProp.id, imgUrl]
-    );
+    const imgList = Array.isArray(images) && images.length > 0
+      ? images
+      : (image ? [image] : ['https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&q=80']);
+
+    for (let i = 0; i < imgList.length; i++) {
+      await client.query(
+        `INSERT INTO property_media (property_id, media_type, file_url, sort_order, is_primary)
+         VALUES ($1, 'image', $2, $3, $4);`,
+        [newProp.id, imgList[i], i, i === 0]
+      );
+    }
 
     // 8. Insert features
     const features = [

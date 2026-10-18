@@ -7,10 +7,11 @@ export default function ConditionalLayout({ children }) {
   const pathname = usePathname();
   const isAdmin = pathname?.startsWith('/admin');
   const isAuth = pathname === '/login' || pathname === '/signup';
+  const isListing = pathname === '/buy' || pathname === '/rent';
 
   return (
     <>
-      {!isAdmin && <Navbar hideBottomBar={isAuth} logoOnly={isAuth} />}
+      {!isAdmin && <Navbar hideBottomBar={isAuth || isListing} logoOnly={isAuth} />}
       <main>{children}</main>
       {!isAdmin && !isAuth && <Footer />}
     </>

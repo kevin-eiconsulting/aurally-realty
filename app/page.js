@@ -92,9 +92,37 @@ export default function HomePage() {
     <div className={styles.page}>
       {/* ===== HERO SEARCH SECTION (MAGICBRICKS STYLE) ===== */}
       <section className={styles.heroSection}>
+        {/* Far-Left Architectural Collage (bleeding off the far-left corner) */}
+        <div className={styles.farLeftCollageWrap}>
+          <img
+            src="/hero-building-collage-clean.png"
+            alt=""
+            className={styles.farLeftCollageImg}
+          />
+        </div>
+
+        {/* Ambient Real Estate Graphic Icons in Background (Right side accent) */}
+        <div className={styles.ambientDecorLayer}>
+          <div className={`${styles.ambientIcon} ${styles.ambientPin}`}>
+            <svg width="52" height="52" viewBox="0 0 24 24" fill="none" stroke="#f26b2b" strokeWidth="1.2">
+              <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+              <circle cx="12" cy="10" r="3"/>
+            </svg>
+          </div>
+          <div className={`${styles.ambientIcon} ${styles.ambientBuilding}`}>
+            <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="#fdba74" strokeWidth="1.2">
+              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"/>
+              <line x1="9" y1="6" x2="9" y2="6.01"/>
+              <line x1="15" y1="6" x2="15" y2="6.01"/>
+              <line x1="9" y1="12" x2="9" y2="12.01"/>
+              <line x1="15" y1="12" x2="15" y2="12.01"/>
+            </svg>
+          </div>
+        </div>
+
         <div className="container">
           <div className={styles.heroContainer}>
-            {/* Left Search Box Area */}
+            {/* Centered Search Box Area */}
             <div className={styles.searchHeroCol}>
               <h1 className={styles.heroHeading}>
                 Start your <span className={styles.hashtag}>#DreamHome</span> Journey
@@ -110,21 +138,12 @@ export default function HomePage() {
                 {[
                   { id: 'buy', label: 'Buy' },
                   { id: 'rent', label: 'Rent' },
-                  { id: 'plot', label: 'Plot' },
-                  { id: 'commercial', label: 'Commercial' },
-                  { id: 'post', label: 'Post Free Property Ad', isPost: true }
                 ].map(tab => (
                   <button
                     key={tab.id}
                     type="button"
                     className={`${styles.tabBtn} ${searchTab === tab.id ? styles.tabActive : ''}`}
-                    onClick={() => {
-                      if (tab.isPost) {
-                        router.push('/sell');
-                      } else {
-                        setSearchTab(tab.id);
-                      }
-                    }}
+                    onClick={() => setSearchTab(tab.id)}
                   >
                     {tab.label}
                     {searchTab === tab.id && <span className={styles.activeUnderline} />}
@@ -164,11 +183,16 @@ export default function HomePage() {
                     className={styles.segmentSelect}
                     aria-label="Property Type"
                   >
-                    <option value="">Flat / Villa +1 ⌵</option>
-                    <option value="apartment">Apartment / Flat</option>
-                    <option value="villa">Independent Villa / House</option>
-                    <option value="plot">Plot / Land</option>
-                    <option value="commercial">Commercial Space</option>
+                    <option value="">Property Type ⌵</option>
+                    <option value="apartment">Apartment</option>
+                    <option value="villa">Villa</option>
+                    <option value="plot">Plot</option>
+                    <option value="individual-house">Individual House</option>
+                    <option value="farm-land">Farm Land</option>
+                    <option value="penthouse">Penthouse</option>
+                    <option value="bungalow">Bungalow</option>
+                    <option value="commercial">Commercial</option>
+                    <option value="office-space">Office Space</option>
                   </select>
                 </div>
 
@@ -192,7 +216,7 @@ export default function HomePage() {
                   </select>
                 </div>
 
-                {/* Red Search Button */}
+                {/* Search Button */}
                 <button type="submit" className={styles.pillSearchBtn}>
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
@@ -200,16 +224,6 @@ export default function HomePage() {
                   Search
                 </button>
               </form>
-            </div>
-
-            {/* Right Side Promo Card (Magicbricks New Projects Style) */}
-            <div className={styles.sidePromoCard}>
-              <div className={styles.promoBadge}>NEW PROJECTS</div>
-              <h3 className={styles.promoTitle}>Tamil Nadu&apos;s biggest destination for new projects</h3>
-              <p className={styles.promoDesc}>Explore top RERA-approved developer communities with exclusive launch prices.</p>
-              <Link href="/buy?sortBy=featured" className={styles.promoCtaBtn}>
-                VISIT NOW 👆
-              </Link>
             </div>
           </div>
         </div>

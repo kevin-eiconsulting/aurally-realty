@@ -112,3 +112,358 @@
 .successIcon { font-size: 64px; margin-bottom: 20px; }
 .successCard h2 { font-family: 'Outfit', sans-serif; font-size: 24px; font-weight: 800; color: #1a1a2e; margin-bottom: 12px; }
 .successCard p { color: #6b7280; font-size: 15px; line-height: 1.6; }
+
+/* Photo Upload Section */
+.photoSection {
+  margin-top: 20px;
+  margin-bottom: 24px;
+}
+.photoHeaderRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mandatoryBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #dc2626;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  padding: 3px 8px;
+  border-radius: 12px;
+}
+.photoCountBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+  font-weight: 700;
+  color: #10b981;
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+.photoUploadBox {
+  border: 2px dashed #fed7aa;
+  background: #fffaf5;
+  border-radius: 16px;
+  padding: 26px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.photoUploadBox:hover {
+  border-color: #f26b2b;
+  background: #fff7ed;
+}
+.photoUploadIcon {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: rgba(242, 107, 43, 0.12);
+  color: #f26b2b;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 26px;
+  margin: 0 auto 12px;
+}
+.photoUploadTitle {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a1a2e;
+  margin-bottom: 4px;
+}
+.photoUploadHint {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+/* Multi-photo Gallery Grid */
+.photoGalleryHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  padding: 10px 14px;
+  border-radius: 10px;
+}
+.photoGalleryTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+.photoGalleryActions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.addMorePhotosBtn {
+  font-size: 12px;
+  font-weight: 600;
+  color: #f26b2b;
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  padding: 5px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.addMorePhotosBtn:hover {
+  background: #f26b2b;
+  color: white;
+}
+.clearAllPhotosBtn {
+  font-size: 12px;
+  color: #9ca3af;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+.clearAllPhotosBtn:hover {
+  color: #ef4444;
+}
+
+.photoGalleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+.photoCard {
+  position: relative;
+  height: 110px;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 2px solid #e5e7eb;
+  background: #111827;
+  transition: all 0.2s ease;
+}
+.photoCardPrimary {
+  border-color: #f26b2b;
+  box-shadow: 0 0 0 2px rgba(242, 107, 43, 0.2);
+}
+.photoCardImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.primaryBadge {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  background: #f26b2b;
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.3);
+}
+.deletePhotoBtn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(0,0,0,0.65);
+  color: white;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.deletePhotoBtn:hover {
+  background: #ef4444;
+}
+.setPrimaryBtn {
+  position: absolute;
+  bottom: 6px;
+  left: 6px;
+  right: 6px;
+  background: rgba(255,255,255,0.92);
+  color: #1f2937;
+  font-size: 10px;
+  font-weight: 600;
+  border-radius: 4px;
+  padding: 3px 0;
+  border: 1px solid rgba(0,0,0,0.1);
+  cursor: pointer;
+  text-align: center;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s;
+}
+.setPrimaryBtn:hover {
+  background: #f26b2b;
+  color: white;
+  border-color: #f26b2b;
+}
+
+.addMoreBox {
+  border: 2px dashed #f26b2b;
+  background: #fffaf5;
+  border-radius: 12px;
+  height: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #f26b2b;
+  transition: all 0.2s ease;
+  padding: 8px;
+  text-align: center;
+}
+.addMoreBox:hover {
+  background: #fff7ed;
+  transform: scale(1.02);
+}
+.addMorePlus {
+  font-size: 24px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.addMoreText {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+/* Mandatory Alert */
+.mandatoryAlert {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  margin-top: 12px;
+}
+
+/* Sample preset photos */
+.samplePhotosWrap {
+  margin-top: 14px;
+  background: #f9fafb;
+  border: 1px solid #f3f4f6;
+  border-radius: 12px;
+  padding: 12px 14px;
+}
+.samplePhotosLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #4b5563;
+  margin-bottom: 8px;
+  display: flex;
+  justify-content: space-between;
+}
+.samplePhotosGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 8px;
+}
+.samplePhotoCard {
+  border: 1.5px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: white;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  padding: 3px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+.samplePhotoCard:hover {
+  border-color: #f26b2b;
+  transform: translateY(-2px);
+}
+.samplePhotoCard img {
+  width: 100%;
+  height: 48px;
+  object-fit: cover;
+  border-radius: 5px;
+  margin-bottom: 3px;
+}
+.samplePhotoCard span {
+  font-size: 10px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+/* Review multi-photo strip */
+.reviewPhotoWrap {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px dashed #e5e7eb;
+}
+.reviewPhotoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.reviewPhotoHeader > span {
+  font-size: 11px;
+  color: #9ca3af;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.reviewPhotoBadge {
+  font-size: 11px;
+  font-weight: 700;
+  color: #10b981;
+}
+.reviewPhotosStrip {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+}
+.reviewPhotoItem {
+  position: relative;
+  flex-shrink: 0;
+  width: 110px;
+  height: 80px;
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1.5px solid #e5e7eb;
+}
+.reviewPhotoItem img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.reviewPrimaryTag {
+  position: absolute;
+  bottom: 4px;
+  left: 4px;
+  background: #f26b2b;
+  color: white;
+  font-size: 9px;
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}

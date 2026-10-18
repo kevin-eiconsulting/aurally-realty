@@ -4,15 +4,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import HorizontalPropertyCard from '@/components/HorizontalPropertyCard';
 import { fetchProperties } from '@/lib/properties';
-import { TAMIL_NADU_CITIES, CITY_AREAS } from '@/lib/data';
+import { TAMIL_NADU_CITIES, CITY_AREAS, PROPERTY_TYPE_OPTIONS } from '@/lib/data';
 import styles from './page.module.css';
-
-const PROPERTY_TYPE_OPTIONS = [
-  { id: 'apartment', label: 'Residential Apartment' },
-  { id: 'villa', label: 'Independent House/Villa' },
-  { id: 'plot', label: 'Residential Land / Plot' },
-  { id: 'commercial', label: 'Commercial Space' }
-];
 
 function BuyPageContent() {
   const searchParams = useSearchParams();
@@ -28,6 +21,7 @@ function BuyPageContent() {
     return 'Chennai';
   });
   const [area, setArea] = useState(searchParams.get('area') || '');
+  const [searchQuery, setSearchQuery] = useState(searchParams.get('q') || '');
   const [selectedTypes, setSelectedTypes] = useState(searchParams.get('type') ? [searchParams.get('type').toLowerCase()] : []);
   const [selectedBeds, setSelectedBeds] = useState(searchParams.get('beds') || '');
   const [minBudget, setMinBudget] = useState('');
@@ -51,6 +45,19 @@ function BuyPageContent() {
     return () => window.removeEventListener('cityChange', handleCityEvent);
   }, []);
 
+  // Sync search queries from top search bar
+  useEffect(() => {
+    const handleSearchQueryChange = (e) => {
+      if (e.detail) {
+        if (typeof e.detail.q === 'string') setSearchQuery(e.detail.q);
+        if (typeof e.detail.area === 'string') setArea(e.detail.area);
+        if (typeof e.detail.city === 'string') setCity(e.detail.city === 'All Tamil Nadu' ? '' : e.detail.city);
+      }
+    };
+    window.addEventListener('searchQueryChange', handleSearchQueryChange);
+    return () => window.removeEventListener('searchQueryChange', handleSearchQueryChange);
+  }, []);
+
   // Fetch properties
   useEffect(() => {
     setLoading(true);
@@ -64,9 +71,29 @@ function BuyPageContent() {
   const filtered = allProps.filter(p => {
     if (p.status !== 'for-sale') return false;
     if (area && p.area?.toLowerCase() !== area.toLowerCase()) return false;
-    if (selectedTypes.length > 0 && !selectedTypes.includes(p.type?.toLowerCase())) return false;
+    if (selectedTypes.length > 0) {
+      const pType = (p.type || '').toLowerCase();
+      const match = selectedTypes.some(t => {
+        const normT = t.toLowerCase();
+        return pType === normT || pType.includes(normT) || normT.includes(pType);
+      });
+      if (!match) return false;
+    }
     if (selectedBeds && p.beds !== parseInt(selectedBeds)) return false;
     if (onlyVerified && !p.verified) return false;
+
+    // Search query filter (title, area, city, type, specs, beds)
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase().trim();
+      const match =
+        p.title?.toLowerCase().includes(q) ||
+        p.area?.toLowerCase().includes(q) ||
+        p.city?.toLowerCase().includes(q) ||
+        p.type?.toLowerCase().includes(q) ||
+        `${p.beds} bhk`.toLowerCase().includes(q) ||
+        `${p.beds}bhk`.toLowerCase().includes(q);
+      if (!match) return false;
+    }
 
     // Quick filters
     if (activeQuickFilter === 'verified' && !p.verified) return false;
@@ -98,12 +125,14 @@ function BuyPageContent() {
 
   const clearAllFilters = () => {
     setArea('');
+    setSearchQuery('');
     setSelectedTypes([]);
     setSelectedBeds('');
     setMinBudget('');
     setMaxBudget('');
     setOnlyVerified(false);
     setActiveQuickFilter('');
+    window.dispatchEvent(new CustomEvent('searchQueryChange', { detail: { q: '', area: '' } }));
   };
 
   const activeAreas = CITY_AREAS[city] || CITY_AREAS['Chennai'];
@@ -132,7 +161,7 @@ function BuyPageContent() {
               {/* Applied Filters header */}
               <div className={styles.filterHeader}>
                 <h3 className={styles.filterTitle}>Applied Filters</h3>
-                {(area || selectedTypes.length > 0 || selectedBeds || onlyVerified || minBudget || maxBudget) && (
+                {(area || searchQuery || selectedTypes.length > 0 || selectedBeds || onlyVerified || minBudget || maxBudget) && (
                   <button type="button" onClick={clearAllFilters} className={styles.clearAllBtn}>
                     Clear All
                   </button>
@@ -146,16 +175,32 @@ function BuyPageContent() {
                     📍 {city}
                   </span>
                 )}
+                {searchQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSearchQuery('');
+                      window.dispatchEvent(new CustomEvent('searchQueryChange', { detail: { q: '' } }));
+                    }}
+                    className={styles.filterChipRemovable}
+                  >
+                    "{searchQuery}" <span className={styles.chipClose}>✕</span>
+                  </button>
+                )}
                 {area && (
                   <button type="button" onClick={() => setArea('')} className={styles.filterChipRemovable}>
                     {area} <span className={styles.chipClose}>✕</span>
                   </button>
                 )}
-                {selectedTypes.map(t => (
-                  <button key={t} type="button" onClick={() => toggleType(t)} className={styles.filterChipRemovable}>
-                    {t.charAt(0).toUpperCase() + t.slice(1)} <span className={styles.chipClose}>✕</span>
-                  </button>
-                ))}
+                {selectedTypes.map(t => {
+                  const opt = PROPERTY_TYPE_OPTIONS.find(o => o.id === t);
+                  const label = opt ? opt.label : t;
+                  return (
+                    <button key={t} type="button" onClick={() => toggleType(t)} className={styles.filterChipRemovable}>
+                      {label} <span className={styles.chipClose}>✕</span>
+                    </button>
+                  );
+                })}
                 {selectedBeds && (
                   <button type="button" onClick={() => setSelectedBeds('')} className={styles.filterChipRemovable}>
                     {selectedBeds} BHK <span className={styles.chipClose}>✕</span>
