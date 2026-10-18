@@ -79,14 +79,12 @@ export default function SellPage() {
   const update = (field, val) => setForm(f => ({ ...f, [field]: val }));
 
   const handleCityChange = (newCity) => {
-    const defaultArea = CITY_AREAS[newCity]?.[0] || '';
     setForm(f => ({
       ...f,
-      city: newCity,
-      area: defaultArea,
-      customArea: ''
+      city: newCity
     }));
   };
+
 
   // Upload multiple image files
   const handleFileChange = (e) => {
@@ -210,7 +208,8 @@ export default function SellPage() {
     }
     setSubmitting(true);
     try {
-      const effectiveArea = form.area === 'Other' ? (form.customArea.trim() || 'Locality') : form.area;
+      const effectiveArea = form.area?.trim() || 'Locality';
+
       const payload = {
         ...form,
         area: effectiveArea,
@@ -312,8 +311,9 @@ export default function SellPage() {
     );
   }
 
-  const effectiveAreaLabel = form.area === 'Other' && form.customArea.trim() ? form.customArea.trim() : (form.area || 'Locality');
-  const canProceedStep1 = form.propertyType && form.city && form.area && (form.area !== 'Other' || form.customArea.trim()) && form.address.trim() && form.title.trim();
+  const effectiveAreaLabel = form.area?.trim() || 'Locality';
+  const canProceedStep1 = form.propertyType && form.city?.trim() && form.area?.trim() && form.address?.trim() && form.title?.trim();
+
   const hasPhotos = form.images && form.images.length > 0;
   const canProceedStep2 = form.sqft && form.price && hasPhotos;
 
@@ -374,48 +374,41 @@ export default function SellPage() {
 
                   <div className="form-group">
                     <label className="form-label">City (Tamil Nadu) *</label>
-                    <select
-                      className="form-select"
+                    <input
+                      type="text"
+                      className="form-input"
+                      list="tn-sell-cities"
                       required
+                      placeholder="Type or select city..."
                       value={form.city}
                       onChange={e => handleCityChange(e.target.value)}
-                    >
+                    />
+                    <datalist id="tn-sell-cities">
                       {TAMIL_NADU_CITIES.map(c => (
-                        <option key={c} value={c}>{c}</option>
+                        <option key={c} value={c} />
                       ))}
-                    </select>
+                    </datalist>
                   </div>
 
                   <div className="form-group">
                     <label className="form-label">Area / Locality *</label>
-                    <select
-                      className="form-select"
+                    <input
+                      type="text"
+                      className="form-input"
+                      list="tn-sell-areas"
                       required
+                      placeholder={`Type area in ${form.city || 'Tamil Nadu'}...`}
                       value={form.area}
                       onChange={e => update('area', e.target.value)}
-                    >
-                      <option value="">Select Area in {form.city}</option>
+                    />
+                    <datalist id="tn-sell-areas">
                       {(CITY_AREAS[form.city] || []).map(a => (
-                        <option key={a} value={a}>{a}</option>
+                        <option key={a} value={a} />
                       ))}
-                      <option value="Other">+ Other / Custom Locality</option>
-                    </select>
+                    </datalist>
                   </div>
                 </div>
 
-                {form.area === 'Other' && (
-                  <div className="form-group" style={{ marginTop: '4px' }}>
-                    <label className="form-label">Enter Custom Locality Name in {form.city} *</label>
-                    <input
-                      className="form-input"
-                      type="text"
-                      placeholder={`e.g. Colony, Nagar, or specific layout in ${form.city}`}
-                      required
-                      value={form.customArea}
-                      onChange={e => update('customArea', e.target.value)}
-                    />
-                  </div>
-                )}
 
                 <div className="form-group">
                   <label className="form-label">Full Address *</label>

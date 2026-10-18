@@ -13,8 +13,9 @@
   background: #ffffff;
   padding: 56px 0 46px;
   border-bottom: 1px solid #f3f4f6;
-  overflow: hidden;
+  z-index: 50;
 }
+
 
 /* Soft warm centered glow behind the search bar area */
 .heroSection::before {
@@ -157,6 +158,8 @@
 
 /* Unified Magicbricks Search Bar Pill */
 .unifiedSearchPill {
+  position: relative;
+  z-index: 60;
   display: flex;
   align-items: center;
   background: #ffffff;

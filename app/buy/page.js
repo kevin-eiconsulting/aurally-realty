@@ -135,7 +135,6 @@ function BuyPageContent() {
     window.dispatchEvent(new CustomEvent('searchQueryChange', { detail: { q: '', area: '' } }));
   };
 
-  const activeAreas = CITY_AREAS[city] || CITY_AREAS['Chennai'];
 
   return (
     <div className={styles.page}>
@@ -228,39 +227,7 @@ function BuyPageContent() {
 
               <div className={styles.filterDivider} />
 
-              {/* City & Locality */}
-              <div className={styles.filterGroup}>
-                <label className={styles.groupLabel}>City (Tamil Nadu)</label>
-                <select
-                  value={city}
-                  onChange={(e) => {
-                    setCity(e.target.value);
-                    setArea('');
-                  }}
-                  className={styles.filterSelect}
-                >
-                  <option value="All Tamil Nadu">All Tamil Nadu</option>
-                  {TAMIL_NADU_CITIES.map(c => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
 
-              <div className={styles.filterGroup}>
-                <label className={styles.groupLabel}>Locality / Area</label>
-                <select
-                  value={area}
-                  onChange={(e) => setArea(e.target.value)}
-                  className={styles.filterSelect}
-                >
-                  <option value="">All Localities in {city}</option>
-                  {activeAreas.map(a => (
-                    <option key={a} value={a}>{a}</option>
-                  ))}
-                </select>
-              </div>
-
-              <div className={styles.filterDivider} />
 
               {/* Budget */}
               <div className={styles.filterGroup}>

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { getCurrentUser, signOutUser } from '@/lib/auth';
-import { TAMIL_NADU_CITIES, CITY_AREAS } from '@/lib/data';
+import { TAMIL_NADU_CITIES, CITY_AREAS, POPULAR_TN_HUBS } from '@/lib/data';
 import styles from './Navbar.module.css';
 
 const navLinks = [
@@ -21,6 +21,13 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
   const [selectedCity, setSelectedCity] = useState('Chennai');
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const cityDropdownRef = useRef(null);
+
+  // 99acres Explore modal states
+  const [exploreTab, setExploreTab] = useState('buy');
+  const [exploreType, setExploreType] = useState('Residential');
+  const [exploreCityInput, setExploreCityInput] = useState('');
+  const [showAllDistricts, setShowAllDistricts] = useState(false);
+
 
   // Listing page search bar state
   const isListingPage = pathname === '/buy' || pathname === '/rent';
@@ -105,6 +112,24 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
     changeCity('All Tamil Nadu');
     window.dispatchEvent(new CustomEvent('searchQueryChange', { detail: { q: '', area: '', city: 'All Tamil Nadu' } }));
   };
+
+  const handleExploreSubmit = (cityToUse) => {
+    const targetCity = cityToUse || exploreCityInput.trim() || selectedCity;
+    changeCity(targetCity);
+    setCityDropdownOpen(false);
+    setExploreCityInput('');
+    setShowAllDistricts(false);
+    const targetPath = exploreTab === 'rent' ? '/rent' : '/buy';
+    const params = new URLSearchParams();
+    if (targetCity && targetCity !== 'All Tamil Nadu') params.set('city', targetCity);
+    if (exploreType === 'Commercial') params.set('type', 'commercial');
+    router.push(`${targetPath}?${params.toString()}`);
+  };
+
+  const filteredExploreCities = exploreCityInput.trim()
+    ? TAMIL_NADU_CITIES.filter(c => c.toLowerCase().includes(exploreCityInput.toLowerCase().trim()))
+    : [];
+
 
   const handleSelectListingCity = (city) => {
     changeCity(city);
@@ -205,48 +230,179 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
               <span className={styles.logoText}>Aurally<span>Realty</span></span>
             </Link>
 
-            {/* City Selector on non-listing pages */}
+            {/* 99acres-style City Selector & Explore Modal on non-listing pages */}
             {!isListingPage && (
               <div className={styles.citySelectorContainer} ref={cityDropdownRef}>
                 <button
                   type="button"
                   className={styles.citySelectorBtn}
                   onClick={() => setCityDropdownOpen(!cityDropdownOpen)}
-                  aria-label="Select City"
+                  aria-label="Select City and Explore Real Estate"
                 >
-                  <span className={styles.cityName}>{selectedCity}</span>
+                  <span className={styles.cityName}>
+                    {selectedCity === 'All Tamil Nadu' ? 'All Tamil Nadu' : `Buy in ${selectedCity}`}
+                  </span>
                   <svg className={`${styles.cityArrow} ${cityDropdownOpen ? styles.arrowOpen : ''}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="6 9 12 15 18 9"></polyline>
                   </svg>
                 </button>
 
                 {cityDropdownOpen && (
-                  <div className={styles.cityDropdownMenu}>
-                    <div className={styles.cityDropdownHeader}>Tamil Nadu Cities</div>
-                    <button
-                      type="button"
-                      className={`${styles.cityOption} ${selectedCity === 'All Tamil Nadu' ? styles.cityActive : ''}`}
-                      onClick={() => changeCity('All Tamil Nadu')}
-                    >
-                      <span>🏛️ All Tamil Nadu</span>
-                    </button>
-                    <div className={styles.cityDivider} />
-                    {TAMIL_NADU_CITIES.map(city => (
-                      <button
-                        key={city}
-                        type="button"
-                        className={`${styles.cityOption} ${selectedCity === city ? styles.cityActive : ''}`}
-                        onClick={() => changeCity(city)}
+                  <div className={styles.exploreFlyout}>
+                    <h2 className={styles.exploreTitle}>Explore real estate in...</h2>
+
+                    {/* Tabs */}
+                    <div className={styles.exploreTabs}>
+                      {[
+                        { id: 'buy', label: 'Buy' },
+                        { id: 'rent', label: 'Rent / Lease' },
+                        { id: 'plot', label: 'Plots/Land' },
+                        { id: 'pg', label: 'PG / Co-living' },
+                      ].map(tab => (
+                        <button
+                          key={tab.id}
+                          type="button"
+                          className={`${styles.exploreTabBtn} ${exploreTab === tab.id ? styles.exploreTabActive : ''}`}
+                          onClick={() => setExploreTab(tab.id)}
+                        >
+                          {tab.label}
+                          {exploreTab === tab.id && <span className={styles.exploreTabUnderline} />}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Search Row */}
+                    <div className={styles.exploreSearchRow}>
+                      <select
+                        className={styles.exploreTypeSelect}
+                        value={exploreType}
+                        onChange={e => setExploreType(e.target.value)}
+                        aria-label="Select Category"
                       >
-                        <span className={styles.cityOptionDot} />
-                        <span>{city}</span>
+                        <option value="Residential">Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Plots">Plots/Land</option>
+                      </select>
+
+                      <div className={styles.exploreInputWrap}>
+                        <span className={styles.exploreInputIcon}>🔍</span>
+                        <input
+                          type="text"
+                          className={styles.exploreInput}
+                          placeholder="City Name"
+                          value={exploreCityInput}
+                          onChange={e => setExploreCityInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              e.preventDefault();
+                              handleExploreSubmit(filteredExploreCities[0] || exploreCityInput);
+                            }
+                          }}
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        className={styles.exploreSubmitBtn}
+                        onClick={() => handleExploreSubmit(filteredExploreCities[0] || exploreCityInput)}
+                      >
+                        Explore
                       </button>
-                    ))}
+
+                      {/* City Autocomplete Dropdown if typing */}
+                      {filteredExploreCities.length > 0 && (
+                        <div className={styles.exploreSuggestionsBox}>
+                          {filteredExploreCities.map(city => (
+                            <button
+                              key={city}
+                              type="button"
+                              className={styles.exploreSuggestionItem}
+                              onClick={() => handleExploreSubmit(city)}
+                            >
+                              <span>📍 {city}</span>
+                              <span style={{ fontSize: '11px', color: '#94a3b8' }}>Tamil Nadu</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Continue Browsing / Recent Section */}
+                    <div className={styles.recentSection}>
+                      <div className={styles.recentTitle}>
+                        {showAllDistricts ? 'All 38 Tamil Nadu Districts:' : 'Continue browsing where you left off...'}
+                      </div>
+
+                      {showAllDistricts ? (
+                        <div className={styles.districtsGridModal}>
+                          {TAMIL_NADU_CITIES.map(city => (
+                            <button
+                              key={city}
+                              type="button"
+                              className={styles.districtGridItem}
+                              onClick={() => {
+                                setShowAllDistricts(false);
+                                handleExploreSubmit(city);
+                              }}
+                            >
+                              🏢 {city}
+                            </button>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className={styles.recentGrid}>
+                          {/* Current City Highlighted */}
+                          <button
+                            type="button"
+                            className={styles.recentPillActive}
+                            onClick={() => handleExploreSubmit(selectedCity)}
+                          >
+                            {exploreTab === 'rent' ? `Rent in ${selectedCity}` : `Buy in ${selectedCity}`}
+                          </button>
+
+                          {/* Top Tamil Nadu Hubs */}
+                          {POPULAR_TN_HUBS.filter(c => c !== selectedCity).slice(0, 5).map(c => (
+                            <button
+                              key={c}
+                              type="button"
+                              className={styles.recentPillNeutral}
+                              onClick={() => handleExploreSubmit(c)}
+                            >
+                              {exploreTab === 'rent' ? `Rent in ${c}` : `Buy in ${c}`}
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Footer Bar */}
+                    <div className={styles.exploreFooter}>
+                      <div className={styles.footerLeftGroup}>
+                        <button
+                          type="button"
+                          className={styles.footerLink}
+                          onClick={() => handleExploreSubmit('All Tamil Nadu')}
+                        >
+                          🏛️ All Tamil Nadu
+                        </button>
+                        <span>·</span>
+                        <span style={{ color: '#94a3b8' }}>38 Districts</span>
+                      </div>
+
+                      <button
+                        type="button"
+                        className={styles.footerRightLink}
+                        onClick={() => setShowAllDistricts(!showAllDistricts)}
+                      >
+                        {showAllDistricts ? 'Hide list ▴' : 'View all cities ›'}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
             )}
           </div>
+
 
           {/* ===== 99ACRES-STYLE BIG SEARCH BAR IN ORANGE BOX (BUY/RENT PAGES) ===== */}
           {isListingPage && (

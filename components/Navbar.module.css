@@ -100,7 +100,9 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  min-width: 195px;
+  min-width: 210px;
+  max-height: 360px;
+  overflow-y: auto;
   background: #ffffff;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -782,3 +784,319 @@
     max-width: 70px;
   }
 }
+
+/* ==========================================================
+   99ACRES-STYLE "EXPLORE REAL ESTATE IN..." CITY FLYOUT MODAL
+   ========================================================== */
+.exploreFlyout {
+  position: absolute;
+  top: calc(100% + 10px);
+  left: 0;
+  width: 560px;
+  max-width: 94vw;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.22), 0 4px 16px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  z-index: 2500;
+  overflow: hidden;
+  animation: flyoutSlide 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes flyoutSlide {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.exploreTitle {
+  font-size: 21px;
+  font-weight: 700;
+  color: #0f172a;
+  padding: 22px 24px 14px;
+  font-family: 'Outfit', sans-serif;
+  letter-spacing: -0.3px;
+  margin: 0;
+}
+
+.exploreTabs {
+  display: flex;
+  gap: 22px;
+  padding: 0 24px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.exploreTabBtn {
+  background: none;
+  border: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: #64748b;
+  padding: 8px 2px 12px;
+  cursor: pointer;
+  position: relative;
+  transition: color 0.15s ease;
+  white-space: nowrap;
+}
+
+.exploreTabBtn:hover {
+  color: #0f172a;
+}
+
+.exploreTabActive {
+  color: #0284c7 !important;
+  font-weight: 700 !important;
+}
+
+.exploreTabUnderline {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: #0284c7;
+  border-radius: 2px 2px 0 0;
+}
+
+.exploreSearchRow {
+  display: flex;
+  align-items: center;
+  margin: 18px 24px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 4px;
+  gap: 8px;
+  background: #ffffff;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.exploreSearchRow:focus-within {
+  border-color: #0284c7;
+  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+}
+
+.exploreTypeSelect {
+  border: none;
+  background: transparent;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #334155;
+  padding: 6px 10px;
+  cursor: pointer;
+  outline: none;
+  border-right: 1px solid #e2e8f0;
+}
+
+.exploreInputWrap {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  gap: 8px;
+  padding-left: 4px;
+}
+
+.exploreInputIcon {
+  color: #94a3b8;
+  font-size: 14px;
+}
+
+.exploreInput {
+  border: none;
+  outline: none;
+  width: 100%;
+  font-size: 14px;
+  font-weight: 500;
+  color: #0f172a;
+  background: transparent;
+}
+
+.exploreInput::placeholder {
+  color: #94a3b8;
+}
+
+.exploreSubmitBtn {
+  background: #0284c7;
+  color: #ffffff;
+  border: none;
+  padding: 8px 20px;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background 0.18s ease;
+  white-space: nowrap;
+}
+
+.exploreSubmitBtn:hover {
+  background: #0369a1;
+}
+
+.exploreSuggestionsBox {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.16);
+  max-height: 220px;
+  overflow-y: auto;
+  z-index: 3000;
+  padding: 6px 0;
+}
+
+.exploreSuggestionItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 8px 16px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-size: 13.5px;
+  color: #1e293b;
+  transition: background 0.12s;
+}
+
+.exploreSuggestionItem:hover {
+  background: #f0f9ff;
+  color: #0284c7;
+}
+
+.recentSection {
+  padding: 0 24px 20px;
+}
+
+.recentTitle {
+  font-size: 12.5px;
+  color: #64748b;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+
+.recentGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.recentPillActive {
+  background: #ffffff;
+  border: 1.5px solid #0284c7;
+  color: #0284c7;
+  border-radius: 20px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.recentPillActive:hover {
+  background: #f0f9ff;
+  transform: translateY(-1px);
+}
+
+.recentPillNeutral {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  color: #334155;
+  border-radius: 20px;
+  padding: 6px 14px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.18s ease;
+}
+
+.recentPillNeutral:hover {
+  background: #f1f5f9;
+  color: #0f172a;
+  transform: translateY(-1px);
+}
+
+.exploreFooter {
+  background: #f8fafc;
+  border-top: 1px solid #f1f5f9;
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #64748b;
+  font-weight: 600;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.footerLeftGroup {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footerLink {
+  color: #475569;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+  transition: color 0.15s;
+}
+
+.footerLink:hover {
+  color: #0284c7;
+}
+
+.footerRightLink {
+  color: #0284c7;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.districtsGridModal {
+  max-height: 220px;
+  overflow-y: auto;
+  padding: 8px 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 6px;
+}
+
+.districtGridItem {
+  padding: 6px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 12.5px;
+  color: #334155;
+  font-weight: 500;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s;
+}
+
+.districtGridItem:hover {
+  background: #f0f9ff;
+  border-color: #7dd3fc;
+  color: #0284c7;
+}
+

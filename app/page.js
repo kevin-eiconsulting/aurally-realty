@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import PropertyCard from '@/components/PropertyCard';
+import LocationSearchCombobox from '@/components/LocationSearchCombobox';
 import { fetchProperties } from '@/lib/properties';
 import { PROPERTIES, TAMIL_NADU_CITIES, CITY_AREAS } from '@/lib/data';
 import styles from './page.module.css';
@@ -153,24 +154,20 @@ export default function HomePage() {
 
               {/* Unified Magicbricks Search Bar Pill */}
               <form className={styles.unifiedSearchPill} onSubmit={handleSearch}>
-                {/* City Chip & Locality Input */}
-                <div className={styles.searchChipSegment}>
-                  <div className={styles.cityChipBadge}>
-                    <span className={styles.pinIcon}>📍</span>
-                    <span className={styles.cityChipName}>{selectedCity}</span>
-                  </div>
-                  <select
-                    value={searchArea}
-                    onChange={(e) => setSearchArea(e.target.value)}
-                    className={styles.localitySelectInput}
-                    aria-label="Select Locality"
-                  >
-                    <option value="">Add Locality / Project...</option>
-                    {activeAreas.map(a => (
-                      <option key={a} value={a}>{a}</option>
-                    ))}
-                  </select>
-                </div>
+                {/* Typeable City & Locality Combobox across all of Tamil Nadu */}
+                <LocationSearchCombobox
+                  selectedCity={selectedCity}
+                  onCityChange={handleCitySelect}
+                  value={searchArea}
+                  onChange={(val) => setSearchArea(val)}
+                  onSelect={({ locality, city }) => {
+                    setSearchArea(locality);
+                    if (city && city !== selectedCity) {
+                      handleCitySelect(city);
+                    }
+                  }}
+                  placeholder="Add Locality, Project, or City..."
+                />
 
                 <div className={styles.pillDivider} />
 
