@@ -817,3 +817,229 @@
   padding: 40px 0;
   color: #64748b;
 }
+
+/* ===== EXECUTIVE BUILDER STATS ROW ===== */
+.statsGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+@media (max-width: 900px) {
+  .statsGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 500px) {
+  .statsGrid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.statCard {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 18px 20px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+  transition: all 0.2s ease;
+}
+
+.statCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.06);
+  border-color: #cbd5e1;
+}
+
+.statIconBox {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+}
+
+.statInfo {
+  display: flex;
+  flex-direction: column;
+}
+
+.statValue {
+  font-family: 'Outfit', sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: #64748b;
+  margin-top: 2px;
+}
+
+.statSub {
+  font-size: 10.5px;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+/* Specific icon box styles */
+.statIconListing { background: #fff7ed; color: #f26b2b; }
+.statIconViews { background: #eff6ff; color: #2563eb; }
+.statIconLeads { background: #ecfdf5; color: #059669; }
+.statIconSaved { background: #faf5ff; color: #9333ea; }
+
+/* ===== PROPERTY ITEM UPGRADES ===== */
+.propMetricRow {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #475569;
+  margin: 10px 0;
+  flex-wrap: wrap;
+}
+
+.propMetricItem {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.propMetricItem strong {
+  color: #0f172a;
+}
+
+.statusSelect {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.15s;
+}
+
+.statusSelect:hover, .statusSelect:focus {
+  border-color: #f26b2b;
+}
+
+.editLinkBtn {
+  padding: 6px 14px;
+  background: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #fdba74;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: all 0.15s;
+}
+
+.editLinkBtn:hover {
+  background: #ffedd5;
+  border-color: #f26b2b;
+}
+
+/* ===== LEAD PIPELINE CONTROLS ===== */
+.leadActionsBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px dashed #e2e8f0;
+  flex-wrap: wrap;
+}
+
+.leadContactBtns {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.contactPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 9999px;
+  text-decoration: none;
+  transition: all 0.15s;
+}
+
+.contactPillCall {
+  background: #eff6ff;
+  color: #1d4ed8;
+  border: 1px solid #bfdbfe;
+}
+
+.contactPillCall:hover {
+  background: #dbeafe;
+}
+
+.contactPillWa {
+  background: #ecfdf5;
+  color: #065f46;
+  border: 1px solid #a7f3d0;
+}
+
+.contactPillWa:hover {
+  background: #d1fae5;
+}
+
+.leadStatusSelect {
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1.5px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+}
+
+.leadStatusSelect:hover {
+  border-color: #f26b2b;
+}
+
+/* ===== BUILDER PROFILE SECTION ===== */
+.builderSectionHeader {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 32px;
+  margin-bottom: 6px;
+}
+
+.builderBadge {
+  font-size: 11px;
+  font-weight: 700;
+  background: #fff7ed;
+  color: #ea580c;
+  padding: 2px 8px;
+  border-radius: 6px;
+  border: 1px solid #fed7aa;
+}

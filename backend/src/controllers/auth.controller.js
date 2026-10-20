@@ -190,12 +190,16 @@ export const getUserProfile = async (req, res) => {
 
     const user = userRes.rows[0];
 
-    // Counts
-    const [propCount, enqCount, favCount, providerRes] = await Promise.all([
+    // Aggregate seller & builder stats
+    const [propCount, activePropCount, viewsCount, leadsCount, enqCount, favCount, providerRes, bizProfileRes] = await Promise.all([
       pool.query('SELECT count(*) as count FROM properties WHERE owner_user_id = $1;', [userId]),
+      pool.query("SELECT count(*) as count FROM properties WHERE owner_user_id = $1 AND listing_status = 'published';", [userId]),
+      pool.query("SELECT COALESCE(SUM(views_count), 0) as views FROM properties WHERE owner_user_id = $1;", [userId]),
+      pool.query("SELECT count(*) as count FROM enquiries e JOIN properties p ON e.property_id = p.id WHERE p.owner_user_id = $1;", [userId]),
       pool.query('SELECT count(*) as count FROM enquiries WHERE created_by_user_id = $1;', [userId]),
       pool.query('SELECT count(*) as count FROM favourites WHERE user_id = $1;', [userId]),
-      pool.query('SELECT * FROM service_providers WHERE user_id = $1 LIMIT 1;', [userId])
+      pool.query('SELECT * FROM service_providers WHERE user_id = $1 LIMIT 1;', [userId]),
+      pool.query('SELECT * FROM business_profiles WHERE owner_user_id = $1 LIMIT 1;', [userId])
     ]);
 
     return res.json({
@@ -211,9 +215,24 @@ export const getUserProfile = async (req, res) => {
       isAdmin: user.roles.includes('admin'),
       stats: {
         propertiesCount: parseInt(propCount.rows[0]?.count || 0),
+        activePropertiesCount: parseInt(activePropCount.rows[0]?.count || 0),
+        totalViews: parseInt(viewsCount.rows[0]?.views || 0),
+        leadsReceivedCount: parseInt(leadsCount.rows[0]?.count || 0),
         enquiriesCount: parseInt(enqCount.rows[0]?.count || 0),
         favouritesCount: parseInt(favCount.rows[0]?.count || 0)
       },
+      businessProfile: bizProfileRes.rows[0] ? {
+        id: bizProfileRes.rows[0].id,
+        businessName: bizProfileRes.rows[0].business_name,
+        businessSlug: bizProfileRes.rows[0].business_slug,
+        businessType: bizProfileRes.rows[0].business_type,
+        description: bizProfileRes.rows[0].description,
+        reraNumber: bizProfileRes.rows[0].rera_registration_number,
+        whatsappNumber: bizProfileRes.rows[0].whatsapp_number,
+        phone: bizProfileRes.rows[0].phone,
+        email: bizProfileRes.rows[0].email,
+        websiteUrl: bizProfileRes.rows[0].website_url
+      } : null,
       providerProfile: providerRes.rows[0] || null
     });
   } catch (err) {
@@ -225,7 +244,19 @@ export const getUserProfile = async (req, res) => {
 // PUT /api/auth/profile
 export const updateProfile = async (req, res) => {
   const userId = req.user.id;
-  const { full_name, email, phone, currentPassword, newPassword } = req.body;
+  const { 
+    full_name, 
+    email, 
+    phone, 
+    currentPassword, 
+    newPassword,
+    company_name,
+    business_type,
+    rera_number,
+    whatsapp_number,
+    bio,
+    website_url
+  } = req.body;
 
   const client = await pool.connect();
   try {
@@ -273,7 +304,7 @@ export const updateProfile = async (req, res) => {
       newHash = await bcrypt.hash(newPassword, 10);
     }
 
-    // Perform update
+    // Perform update on users
     const updateRes = await client.query(`
       UPDATE users SET
         full_name = COALESCE($1, full_name),
@@ -284,6 +315,54 @@ export const updateProfile = async (req, res) => {
       WHERE id = $5
       RETURNING id, full_name, email, phone, updated_at;
     `, [full_name?.trim() || null, email?.trim() || null, cleanPhone, newHash, userId]);
+
+    // Handle builder business_profile if company fields passed
+    let updatedBiz = null;
+    if (company_name !== undefined || rera_number !== undefined || whatsapp_number !== undefined || bio !== undefined || website_url !== undefined) {
+      const existingBiz = await client.query('SELECT * FROM business_profiles WHERE owner_user_id = $1 LIMIT 1;', [userId]);
+      if (existingBiz.rows.length > 0) {
+        const bizRes = await client.query(`
+          UPDATE business_profiles SET
+            business_name = COALESCE($1, business_name),
+            business_type = COALESCE($2, business_type),
+            description = COALESCE($3, description),
+            rera_registration_number = COALESCE($4, rera_registration_number),
+            whatsapp_number = COALESCE($5, whatsapp_number),
+            website_url = COALESCE($6, website_url),
+            updated_at = NOW()
+          WHERE owner_user_id = $7
+          RETURNING *;
+        `, [
+          company_name ? company_name.trim() : null,
+          business_type || null,
+          bio !== undefined ? bio : null,
+          rera_number ? rera_number.trim() : null,
+          whatsapp_number ? whatsapp_number.replace(/\D/g, '') : null,
+          website_url ? website_url.trim() : null,
+          userId
+        ]);
+        updatedBiz = bizRes.rows[0];
+      } else if (company_name && company_name.trim()) {
+        const slug = `${company_name.toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${Date.now().toString().slice(-4)}`;
+        const bizRes = await client.query(`
+          INSERT INTO business_profiles (
+            owner_user_id, business_name, business_slug, business_type,
+            description, rera_registration_number, whatsapp_number, website_url
+          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+          RETURNING *;
+        `, [
+          userId,
+          company_name.trim(),
+          slug,
+          business_type || 'builder',
+          bio || '',
+          rera_number ? rera_number.trim() : null,
+          whatsapp_number ? whatsapp_number.replace(/\D/g, '') : null,
+          website_url ? website_url.trim() : null
+        ]);
+        updatedBiz = bizRes.rows[0];
+      }
+    }
 
     await client.query('COMMIT');
 
@@ -299,7 +378,17 @@ export const updateProfile = async (req, res) => {
         phone: updated.phone,
         roles: req.user.roles,
         isAdmin: req.user.isAdmin
-      }
+      },
+      businessProfile: updatedBiz ? {
+        id: updatedBiz.id,
+        businessName: updatedBiz.business_name,
+        businessSlug: updatedBiz.business_slug,
+        businessType: updatedBiz.business_type,
+        description: updatedBiz.description,
+        reraNumber: updatedBiz.rera_registration_number,
+        whatsappNumber: updatedBiz.whatsapp_number,
+        websiteUrl: updatedBiz.website_url
+      } : null
     });
   } catch (err) {
     await client.query('ROLLBACK');

@@ -184,16 +184,7 @@ export default function ServicesPage() {
               </div>
             </div>
 
-            {/* Quick Link to Experts Directory */}
-            <div className={styles.expertsBanner}>
-              <span className={styles.bannerIcon}>👷‍♂️</span>
-              <div className={styles.bannerText}>
-                <strong>Looking for licensed professionals?</strong> Browse our verified directory of Architects, Structural Engineers & Contractors.
-              </div>
-              <Link href="/experts" className={styles.bannerBtn}>
-                Browse Experts Directory →
-              </Link>
-            </div>
+            {/* Quick Link to Experts Directory (Hidden) */}
           </div>
         </div>
       </div>
@@ -296,7 +287,7 @@ export default function ServicesPage() {
             <p>Our dedicated civil project team assists builders, developers, and individual home makers with bulk procurement and turnkey management.</p>
             <div className={styles.supportActions}>
               <a href="tel:+919841023456" className={styles.supportCallBtn}>📞 Call Project Support</a>
-              <Link href="/experts" className={styles.supportConsultBtn}>Consult a Chartered Engineer</Link>
+              <a href="mailto:support@aurally.com" className={styles.supportConsultBtn}>📧 Email Technical Desk</a>
             </div>
           </div>
         </div>

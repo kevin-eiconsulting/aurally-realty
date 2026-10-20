@@ -23,6 +23,16 @@ const formatPropertyRow = (row, mediaMap = {}, featuresMap = {}) => {
     }
   }
 
+  // Parse amenities
+  let amenitiesList = [];
+  if (features.amenities) {
+    try {
+      amenitiesList = typeof features.amenities === 'string' ? JSON.parse(features.amenities) : features.amenities;
+    } catch {
+      amenitiesList = String(features.amenities).split(',').map(s => s.trim()).filter(Boolean);
+    }
+  }
+
   return {
     id: Number(row.id),
     title: row.title,
@@ -38,19 +48,29 @@ const formatPropertyRow = (row, mediaMap = {}, featuresMap = {}) => {
     beds: row.bedrooms || 0,
     baths: row.bathrooms || 0,
     sqft: Number(row.built_up_area) || 0,
+    carpetArea: features.carpetArea ? Number(features.carpetArea) : null,
     floor: features.floor || 'Ground',
+    totalFloors: features.totalFloors ? Number(features.totalFloors) : null,
     facing: features.facing || 'East',
     age: features.age || 'New',
     furnishing: features.furnishing || 'Semi Furnished',
+    ownershipType: features.ownershipType || 'Freehold',
+    maintenance: features.maintenance ? Number(features.maintenance) : 0,
+    reraNumber: row.rera_number || features.reraNumber || '',
+    videoUrl: features.videoUrl || '',
+    amenities: Array.isArray(amenitiesList) ? amenitiesList : [],
     image: primaryImage,
     images: allImages,
-    featured: features.featured === 'true' || row.listing_status === 'published' && features.featured !== 'false' && false,
+    featured: features.featured === 'true' || (row.listing_status === 'published' && features.featured !== 'false' && false),
     verified: features.verified === 'true' || row.approval_status === 'approved',
     description: row.description || '',
     address: row.address_line1 || '',
     owner: row.owner_name || 'Property Owner',
     phone: row.contact_phone || row.owner_phone || '',
-    created_at: row.created_at
+    views: Number(row.views_count) || 0,
+    leadsCount: row.leads_count !== undefined ? Number(row.leads_count) : 0,
+    created_at: row.created_at,
+    updated_at: row.updated_at
   };
 };
 
@@ -290,7 +310,14 @@ export const createProperty = async (req, res) => {
       description = '',
       phone,
       image,
-      images
+      images,
+      carpetArea,
+      totalFloors,
+      ownershipType = 'Freehold',
+      maintenance = 0,
+      reraNumber = '',
+      videoUrl = '',
+      amenities = []
     } = req.body;
 
     if (!title || !price || !area) {
@@ -382,7 +409,8 @@ export const createProperty = async (req, res) => {
         Number(beds),
         Number(baths),
         address,
-        phone || req.user?.phone || ''
+        phone || req.user?.phone || '',
+        reraNumber ? reraNumber.trim() : null
       ]
     );
     const newProp = propInsertRes.rows[0];
@@ -402,13 +430,19 @@ export const createProperty = async (req, res) => {
 
     // 8. Insert features
     const features = [
-      { key: 'floor', val: floor },
-      { key: 'facing', val: facing },
-      { key: 'age', val: age },
-      { key: 'furnishing', val: furnishing },
+      { key: 'floor', val: String(floor || 'Ground') },
+      { key: 'facing', val: String(facing || 'East') },
+      { key: 'age', val: String(age || 'New') },
+      { key: 'furnishing', val: String(furnishing || 'Semi Furnished') },
       { key: 'featured', val: 'false' },
       { key: 'verified', val: 'false' },
-      { key: 'priceUnit', val: isRent ? '/mo' : (rawPrice >= 10000000 ? 'Cr' : 'Lakhs') }
+      { key: 'priceUnit', val: isRent ? '/mo' : (rawPrice >= 10000000 ? 'Cr' : 'Lakhs') },
+      { key: 'carpetArea', val: carpetArea ? String(carpetArea) : '' },
+      { key: 'totalFloors', val: totalFloors ? String(totalFloors) : '' },
+      { key: 'ownershipType', val: String(ownershipType || 'Freehold') },
+      { key: 'maintenance', val: maintenance ? String(maintenance) : '0' },
+      { key: 'videoUrl', val: String(videoUrl || '') },
+      { key: 'amenities', val: Array.isArray(amenities) ? JSON.stringify(amenities) : String(amenities || '[]') }
     ];
 
     for (const f of features) {
@@ -447,11 +481,17 @@ export const getMyProperties = async (req, res) => {
              loc.name as area_name,
              COALESCE(CASE WHEN loc.location_type = 'city' THEN loc.name WHEN parent_loc.location_type = 'city' THEN parent_loc.name ELSE 'Chennai' END, 'Chennai') as city_name,
              u.full_name as owner_name,
-             u.phone as owner_phone
+             u.phone as owner_phone,
+             COALESCE(e.leads_count, 0) as leads_count
       FROM properties p
       LEFT JOIN locations loc ON p.location_id = loc.id
       LEFT JOIN locations parent_loc ON loc.parent_id = parent_loc.id
       LEFT JOIN users u ON p.owner_user_id = u.id
+      LEFT JOIN (
+        SELECT property_id, COUNT(*) as leads_count 
+        FROM enquiries 
+        GROUP BY property_id
+      ) e ON e.property_id = p.id
       WHERE p.owner_user_id = $1
       ORDER BY p.created_at DESC;
     `;
@@ -521,3 +561,249 @@ export const deleteProperty = async (req, res) => {
   }
 };
 
+
+// PUT /api/properties/:id
+// Update an existing property listing (Owner or Admin)
+export const updateProperty = async (req, res) => {
+  const { id } = req.params;
+  const userId = req.user.id;
+  const isAdmin = req.user.isAdmin;
+  const client = await pool.connect();
+
+  try {
+    const propRes = await client.query('SELECT * FROM properties WHERE id = $1;', [Number(id)]);
+    if (propRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+
+    const existingProp = propRes.rows[0];
+    if (!isAdmin && Number(existingProp.owner_user_id) !== Number(userId)) {
+      return res.status(403).json({ error: 'Forbidden: You can only edit your own listings.' });
+    }
+
+    const {
+      title,
+      listingType,
+      propertyType,
+      area,
+      city,
+      address,
+      beds,
+      baths,
+      sqft,
+      price,
+      facing,
+      floor,
+      furnishing,
+      age,
+      description,
+      phone,
+      images,
+      image,
+      carpetArea,
+      totalFloors,
+      ownershipType,
+      maintenance,
+      reraNumber,
+      videoUrl,
+      amenities,
+      listingStatus
+    } = req.body;
+
+    await client.query('BEGIN');
+
+    // 1. Resolve location if area changed
+    let locationId = existingProp.location_id;
+    if (area && area.trim()) {
+      const locRes = await client.query('SELECT id FROM locations WHERE LOWER(name) = LOWER($1) LIMIT 1;', [area.trim()]);
+      if (locRes.rows.length > 0) {
+        locationId = locRes.rows[0].id;
+      } else {
+        const targetCity = (city || 'Chennai').trim();
+        const cityRes = await client.query('SELECT id FROM locations WHERE LOWER(name) = LOWER($1) LIMIT 1;', [targetCity]);
+        const parentId = cityRes.rows[0]?.id || null;
+        const newLoc = await client.query(
+          `INSERT INTO locations (parent_id, location_type, name)
+           VALUES ($1, 'district', $2)
+           ON CONFLICT (parent_id, location_type, name) DO UPDATE SET name = EXCLUDED.name
+           RETURNING id;`,
+          [parentId, area.trim()]
+        );
+        locationId = newLoc.rows[0].id;
+      }
+    }
+
+    // 2. Resolve price
+    let rawPrice = existingProp.price;
+    if (price !== undefined && price !== null && price !== '') {
+      rawPrice = Number(price);
+      const isRent = (listingType || existingProp.listing_type) === 'rent';
+      if (!isRent && rawPrice < 10000) {
+        rawPrice = rawPrice * 100000;
+      }
+    }
+
+    // 3. Update properties table
+    const updatePropQuery = `
+      UPDATE properties SET
+        title = COALESCE($1, title),
+        listing_type = COALESCE($2, listing_type),
+        property_type = COALESCE($3, property_type),
+        location_id = COALESCE($4, location_id),
+        address_line1 = COALESCE($5, address_line1),
+        bedrooms = COALESCE($6, bedrooms),
+        bathrooms = COALESCE($7, bathrooms),
+        built_up_area = COALESCE($8, built_up_area),
+        price = COALESCE($9, price),
+        description = COALESCE($10, description),
+        contact_phone = COALESCE($11, contact_phone),
+        rera_number = COALESCE($12, rera_number),
+        listing_status = COALESCE($13, listing_status),
+        updated_at = NOW()
+      WHERE id = $14
+      RETURNING *;
+    `;
+
+    const updatedPropRes = await client.query(updatePropQuery, [
+      title ? title.trim() : null,
+      listingType || null,
+      propertyType || null,
+      locationId,
+      address ? address.trim() : null,
+      beds !== undefined && beds !== '' ? Number(beds) : null,
+      baths !== undefined && baths !== '' ? Number(baths) : null,
+      sqft !== undefined && sqft !== '' ? Number(sqft) : null,
+      rawPrice !== null ? Number(rawPrice) : null,
+      description !== undefined ? description : null,
+      phone ? phone.trim() : null,
+      reraNumber !== undefined ? (reraNumber ? reraNumber.trim() : null) : null,
+      listingStatus || null,
+      existingProp.id
+    ]);
+    const updatedProp = updatedPropRes.rows[0];
+
+    // 4. Update features
+    const featureUpdates = {};
+    if (floor !== undefined) featureUpdates.floor = String(floor);
+    if (facing !== undefined) featureUpdates.facing = String(facing);
+    if (age !== undefined) featureUpdates.age = String(age);
+    if (furnishing !== undefined) featureUpdates.furnishing = String(furnishing);
+    if (carpetArea !== undefined) featureUpdates.carpetArea = String(carpetArea);
+    if (totalFloors !== undefined) featureUpdates.totalFloors = String(totalFloors);
+    if (ownershipType !== undefined) featureUpdates.ownershipType = String(ownershipType);
+    if (maintenance !== undefined) featureUpdates.maintenance = String(maintenance);
+    if (videoUrl !== undefined) featureUpdates.videoUrl = String(videoUrl);
+    if (amenities !== undefined) {
+      featureUpdates.amenities = Array.isArray(amenities) ? JSON.stringify(amenities) : String(amenities);
+    }
+    const isRentListing = (listingType || existingProp.listing_type) === 'rent';
+    featureUpdates.priceUnit = isRentListing ? '/mo' : (Number(rawPrice) >= 10000000 ? 'Cr' : 'Lakhs');
+
+    for (const [key, val] of Object.entries(featureUpdates)) {
+      await client.query(`
+        INSERT INTO property_features (property_id, feature_key, feature_value)
+        VALUES ($1, $2, $3)
+        ON CONFLICT (property_id, feature_key) DO UPDATE SET feature_value = EXCLUDED.feature_value;
+      `, [updatedProp.id, key, val]);
+    }
+
+    // 5. Update media if images supplied
+    const imgList = Array.isArray(images) && images.length > 0 ? images : (image ? [image] : null);
+    if (imgList) {
+      await client.query('DELETE FROM property_media WHERE property_id = $1;', [updatedProp.id]);
+      for (let i = 0; i < imgList.length; i++) {
+        await client.query(
+          `INSERT INTO property_media (property_id, media_type, file_url, sort_order, is_primary)
+           VALUES ($1, 'image', $2, $3, $4);`,
+          [updatedProp.id, imgList[i], i, i === 0]
+        );
+      }
+    }
+
+    await client.query('COMMIT');
+
+    // Fetch refreshed features & media to return formatted row
+    const [mediaRes, featuresRes] = await Promise.all([
+      pool.query('SELECT file_url, is_primary, sort_order FROM property_media WHERE property_id = $1 ORDER BY sort_order ASC;', [updatedProp.id]),
+      pool.query('SELECT feature_key, feature_value FROM property_features WHERE property_id = $1;', [updatedProp.id])
+    ]);
+    const fMap = {};
+    for (const f of featuresRes.rows) {
+      fMap[f.feature_key] = f.feature_value;
+    }
+
+    return res.json({
+      success: true,
+      message: 'Property updated successfully.',
+      property: formatPropertyRow(
+        { ...updatedProp, area_name: area || existingProp.address_line1, owner_name: req.user.name, owner_phone: updatedProp.contact_phone },
+        { [updatedProp.id]: mediaRes.rows },
+        { [updatedProp.id]: fMap }
+      )
+    });
+  } catch (err) {
+    await client.query('ROLLBACK');
+    console.error('Error updating property:', err);
+    return res.status(500).json({ error: 'Failed to update property.' });
+  } finally {
+    client.release();
+  }
+};
+
+// PATCH /api/properties/:id/status
+// Quick status toggle (published, draft, archived, sold)
+export const updateListingStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const userId = req.user.id;
+  const isAdmin = req.user.isAdmin;
+
+  const validStatuses = ['published', 'draft', 'pending', 'archived', 'sold'];
+  if (!status || !validStatuses.includes(status)) {
+    return res.status(400).json({ error: `Invalid status. Allowed values: ${validStatuses.join(', ')}` });
+  }
+
+  try {
+    const propRes = await pool.query('SELECT owner_user_id FROM properties WHERE id = $1;', [Number(id)]);
+    if (propRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+
+    if (!isAdmin && Number(propRes.rows[0].owner_user_id) !== Number(userId)) {
+      return res.status(403).json({ error: 'Forbidden: You can only update the status of your own properties.' });
+    }
+
+    const { rows } = await pool.query(
+      'UPDATE properties SET listing_status = $1, updated_at = NOW() WHERE id = $2 RETURNING id, listing_status, updated_at;',
+      [status, Number(id)]
+    );
+
+    return res.json({
+      success: true,
+      message: `Property listing status updated to ${status}.`,
+      property: rows[0]
+    });
+  } catch (err) {
+    console.error('Error updating listing status:', err);
+    return res.status(500).json({ error: 'Failed to update property status.' });
+  }
+};
+
+// POST /api/properties/:id/view
+// Safely increment property views
+export const recordPropertyView = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const { rows } = await pool.query(
+      'UPDATE properties SET views_count = COALESCE(views_count, 0) + 1 WHERE id = $1 RETURNING id, views_count;',
+      [Number(id)]
+    );
+    if (rows.length === 0) {
+      return res.status(404).json({ error: 'Property not found.' });
+    }
+    return res.json({ success: true, views: rows[0].views_count });
+  } catch (err) {
+    console.error('Error recording view:', err);
+    return res.status(500).json({ error: 'Failed to record view.' });
+  }
+};

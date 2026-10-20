@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, signOutUser } from '@/lib/auth';
 import { apiFetch } from '@/lib/api';
+import { togglePropertyListingStatus } from '@/lib/properties';
 import styles from './page.module.css';
 
 export default function AccountPage() {
@@ -13,13 +14,19 @@ export default function AccountPage() {
   const [activeTab, setActiveTab] = useState('profile');
   const [loading, setLoading] = useState(true);
 
-  // Profile Form state
+  // Profile Form state with Builder/Company fields
   const [formProfile, setFormProfile] = useState({
     fullName: '',
     email: '',
     phone: '',
     currentPassword: '',
-    newPassword: ''
+    newPassword: '',
+    companyName: '',
+    businessType: 'builder',
+    reraNumber: '',
+    whatsappNumber: '',
+    websiteUrl: '',
+    bio: ''
   });
   const [savingProfile, setSavingProfile] = useState(false);
   const [profileMsg, setProfileMsg] = useState({ text: '', type: '' });
@@ -28,15 +35,28 @@ export default function AccountPage() {
   const [myProperties, setMyProperties] = useState([]);
   const [loadingProps, setLoadingProps] = useState(false);
   const [deletingPropId, setDeletingPropId] = useState(null);
+  const [updatingPropId, setUpdatingPropId] = useState(null);
 
   // Enquiries State
   const [enquiries, setEnquiries] = useState([]);
   const [enquiryFilter, setEnquiryFilter] = useState('all'); // 'all', 'sent', 'received'
   const [loadingEnquiries, setLoadingEnquiries] = useState(false);
+  const [updatingEnqId, setUpdatingEnqId] = useState(null);
 
   // Saved Properties State
   const [savedProperties, setSavedProperties] = useState([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
+
+  // Check URL query parameters for ?tab=
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      if (tabParam && ['profile', 'properties', 'enquiries', 'saved'].includes(tabParam)) {
+        setActiveTab(tabParam);
+      }
+    }
+  }, []);
 
   // Load User & Profile
   useEffect(() => {
@@ -48,27 +68,35 @@ export default function AccountPage() {
           return;
         }
         setUser(u);
-        setFormProfile({
+        setFormProfile(prev => ({
+          ...prev,
           fullName: u.username || u.name || '',
           email: u.email || '',
-          phone: u.phone || '',
-          currentPassword: '',
-          newPassword: ''
-        });
+          phone: u.phone || ''
+        }));
 
-        // Fetch detailed profile with stats
+        // Fetch detailed profile with builder stats and businessProfile
         try {
           const profile = await apiFetch('/auth/profile');
           if (profile) {
             setProfileData(profile);
+            const biz = profile.businessProfile || {};
             setFormProfile(prev => ({
               ...prev,
               fullName: profile.full_name || profile.username || prev.fullName,
               email: profile.email || prev.email,
-              phone: profile.phone || prev.phone
+              phone: profile.phone || prev.phone,
+              companyName: biz.businessName || '',
+              businessType: biz.businessType || 'builder',
+              reraNumber: biz.reraNumber || '',
+              whatsappNumber: biz.whatsappNumber || '',
+              websiteUrl: biz.websiteUrl || '',
+              bio: biz.description || ''
             }));
           }
-        } catch (_) {}
+        } catch (profileErr) {
+          console.warn('Failed to fetch detailed profile:', profileErr.message);
+        }
       } catch (err) {
         router.push('/login?redirect=/account');
       } finally {
@@ -120,7 +148,7 @@ export default function AccountPage() {
     }
   }, [activeTab, user, loadTabContent]);
 
-  // Handle Profile Update
+  // Handle Profile Update (including company/builder fields)
   const handleUpdateProfile = async (e) => {
     e.preventDefault();
     setSavingProfile(true);
@@ -133,20 +161,70 @@ export default function AccountPage() {
           full_name: formProfile.fullName,
           email: formProfile.email,
           phone: formProfile.phone,
+          company_name: formProfile.companyName || undefined,
+          business_type: formProfile.businessType || 'builder',
+          rera_number: formProfile.reraNumber || undefined,
+          whatsapp_number: formProfile.whatsappNumber || undefined,
+          website_url: formProfile.websiteUrl || undefined,
+          bio: formProfile.bio || undefined,
           currentPassword: formProfile.currentPassword || undefined,
           newPassword: formProfile.newPassword || undefined
         })
       });
 
-      setProfileMsg({ text: 'Profile updated successfully!', type: 'success' });
+      setProfileMsg({ text: 'Profile & company details updated successfully!', type: 'success' });
       setFormProfile(prev => ({ ...prev, currentPassword: '', newPassword: '' }));
       if (res?.user) {
         setUser(prev => ({ ...prev, ...res.user }));
+      }
+      if (res?.businessProfile) {
+        setProfileData(prev => ({ ...prev, businessProfile: res.businessProfile }));
       }
     } catch (err) {
       setProfileMsg({ text: err.message || 'Failed to update profile.', type: 'error' });
     } finally {
       setSavingProfile(false);
+    }
+  };
+
+  // Handle Listing Status Change (Fast toggle)
+  const handleListingStatusChange = async (propId, newStatus) => {
+    setUpdatingPropId(propId);
+    try {
+      await togglePropertyListingStatus(propId, newStatus);
+      setMyProperties(prev => prev.map(p => p.id === propId ? { ...p, listingStatus: newStatus } : p));
+      // Refresh active count in profile stats
+      setProfileData(prev => {
+        if (!prev) return prev;
+        const newActive = myProperties.filter(p => (p.id === propId ? newStatus === 'published' : p.listingStatus === 'published')).length;
+        return {
+          ...prev,
+          stats: {
+            ...prev.stats,
+            activePropertiesCount: newActive
+          }
+        };
+      });
+    } catch (err) {
+      alert(`Could not update listing status: ${err.message}`);
+    } finally {
+      setUpdatingPropId(null);
+    }
+  };
+
+  // Handle Enquiry Status Change
+  const handleEnquiryStatusChange = async (enquiryId, newStatus) => {
+    setUpdatingEnqId(enquiryId);
+    try {
+      await apiFetch(`/enquiries/${enquiryId}/status`, {
+        method: 'PATCH',
+        body: JSON.stringify({ status: newStatus })
+      });
+      setEnquiries(prev => prev.map(enq => enq.id === enquiryId ? { ...enq, enquiry_status: newStatus } : enq));
+    } catch (err) {
+      alert(`Could not update enquiry status: ${err.message}`);
+    } finally {
+      setUpdatingEnqId(null);
     }
   };
 
@@ -201,10 +279,16 @@ export default function AccountPage() {
     return (
       <div className={styles.loadingPage}>
         <div className={styles.spinner}></div>
-        <p>Loading your account...</p>
+        <p>Loading your builder dashboard...</p>
       </div>
     );
   }
+
+  // Calculated Builder Stats
+  const activeCount = profileData?.stats?.activePropertiesCount ?? myProperties.filter(p => p.listingStatus === 'published').length;
+  const totalViews = profileData?.stats?.totalViews ?? myProperties.reduce((acc, p) => acc + (p.views || 0), 0);
+  const leadsCount = profileData?.stats?.leadsReceivedCount ?? enquiries.filter(e => e.enquiry_type === 'received').length;
+  const favCount = profileData?.stats?.favouritesCount ?? 0;
 
   return (
     <div className={styles.page}>
@@ -222,15 +306,70 @@ export default function AccountPage() {
                   {role.replace('_', ' ').toUpperCase()}
                 </span>
               ))}
+              {profileData?.businessProfile?.businessName && (
+                <span className={styles.builderBadge}>
+                  🏢 {profileData.businessProfile.businessName}
+                </span>
+              )}
             </div>
             <p className={styles.userContacts}>
               {user?.email && <span>✉️ {user.email}</span>}
               {user?.phone && <span>📞 {user.phone}</span>}
+              {profileData?.businessProfile?.reraNumber && (
+                <span>🏛️ RERA: {profileData.businessProfile.reraNumber}</span>
+              )}
             </p>
           </div>
           <button onClick={handleLogout} className={styles.topLogoutBtn}>
             Sign Out
           </button>
+        </div>
+
+        {/* ===== EXECUTIVE 4-CARD BUILDER STATS ROW ===== */}
+        <div className={styles.statsGrid}>
+          <div className={styles.statCard}>
+            <div className={`${styles.statIconBox} ${styles.statIconListing}`}>
+              🏠
+            </div>
+            <div className={styles.statInfo}>
+              <span className={styles.statValue}>{activeCount}</span>
+              <span className={styles.statLabel}>Active Listings</span>
+              <span className={styles.statSub}>Live on Aurally</span>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={`${styles.statIconBox} ${styles.statIconViews}`}>
+              👁️
+            </div>
+            <div className={styles.statInfo}>
+              <span className={styles.statValue}>{totalViews}</span>
+              <span className={styles.statLabel}>Total Views</span>
+              <span className={styles.statSub}>Buyer impressions</span>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={`${styles.statIconBox} ${styles.statIconLeads}`}>
+              📩
+            </div>
+            <div className={styles.statInfo}>
+              <span className={styles.statValue}>{leadsCount}</span>
+              <span className={styles.statLabel}>Buyer Inquiries</span>
+              <span className={styles.statSub}>Direct leads received</span>
+            </div>
+          </div>
+
+          <div className={styles.statCard}>
+            <div className={`${styles.statIconBox} ${styles.statIconSaved}`}>
+              🔖
+            </div>
+            <div className={styles.statInfo}>
+              <span className={styles.statValue}>{favCount}</span>
+              <span className={styles.statLabel}>Saved / Shortlisted</span>
+              <span className={styles.statSub}>By interested buyers</span>
+            </div>
+          </div>
         </div>
 
         {/* ===== DASHBOARD BODY ===== */}
@@ -244,7 +383,7 @@ export default function AccountPage() {
                 onClick={() => setActiveTab('profile')}
               >
                 <span className={styles.navIcon}>👤</span>
-                <span className={styles.navLabel}>My Profile</span>
+                <span className={styles.navLabel}>My Profile & Brand</span>
               </button>
 
               <button
@@ -253,7 +392,7 @@ export default function AccountPage() {
                 onClick={() => setActiveTab('properties')}
               >
                 <span className={styles.navIcon}>🏠</span>
-                <span className={styles.navLabel}>My Properties</span>
+                <span className={styles.navLabel}>Manage Listings</span>
                 {profileData?.stats?.propertiesCount > 0 && (
                   <span className={styles.countBadge}>{profileData.stats.propertiesCount}</span>
                 )}
@@ -265,9 +404,9 @@ export default function AccountPage() {
                 onClick={() => setActiveTab('enquiries')}
               >
                 <span className={styles.navIcon}>📩</span>
-                <span className={styles.navLabel}>My Enquiries</span>
-                {profileData?.stats?.enquiriesCount > 0 && (
-                  <span className={styles.countBadge}>{profileData.stats.enquiriesCount}</span>
+                <span className={styles.navLabel}>Buyer Inquiries</span>
+                {leadsCount > 0 && (
+                  <span className={styles.countBadge}>{leadsCount}</span>
                 )}
               </button>
 
@@ -293,12 +432,12 @@ export default function AccountPage() {
 
           {/* MAIN TAB CONTENT */}
           <main className={styles.tabContentArea}>
-            {/* 1. PROFILE TAB */}
+            {/* 1. PROFILE & BUILDER BRAND TAB */}
             {activeTab === 'profile' && (
               <div className={styles.tabCard}>
                 <div className={styles.tabHeader}>
-                  <h2>Personal Information</h2>
-                  <p>Manage your account credentials, contact phone, and authentication settings.</p>
+                  <h2>Personal & Builder Information</h2>
+                  <p>Manage your account credentials, business name, RERA license, and contact settings.</p>
                 </div>
 
                 {profileMsg.text && (
@@ -310,7 +449,7 @@ export default function AccountPage() {
                 <form onSubmit={handleUpdateProfile} className={styles.profileForm}>
                   <div className={styles.formRowDouble}>
                     <div className={styles.inputGroup}>
-                      <label>Full Name</label>
+                      <label>Full Name *</label>
                       <input
                         type="text"
                         value={formProfile.fullName}
@@ -321,7 +460,7 @@ export default function AccountPage() {
                     </div>
 
                     <div className={styles.inputGroup}>
-                      <label>Phone Number</label>
+                      <label>Primary Phone Number *</label>
                       <input
                         type="tel"
                         value={formProfile.phone}
@@ -338,7 +477,89 @@ export default function AccountPage() {
                       type="email"
                       value={formProfile.email}
                       onChange={e => setFormProfile({ ...formProfile, email: e.target.value })}
-                      placeholder="e.g. name@example.com"
+                      placeholder="e.g. builder@example.com"
+                    />
+                  </div>
+
+                  {/* BUILDER / COMPANY DETAILS SECTION */}
+                  <div className={styles.builderSectionHeader}>
+                    <h3 className={styles.subHeading} style={{ margin: 0 }}>
+                      🏢 Builder / Agency Brand Profile
+                    </h3>
+                    <span className={styles.builderBadge}>MagicBricks Style</span>
+                  </div>
+                  <p style={{ fontSize: '12.5px', color: '#64748b', marginBottom: '16px' }}>
+                    Showcase your brand credentials to give genuine buyers and tenants confidence in your listings.
+                  </p>
+
+                  <div className={styles.formRowDouble}>
+                    <div className={styles.inputGroup}>
+                      <label>Company / Builder Name</label>
+                      <input
+                        type="text"
+                        value={formProfile.companyName}
+                        onChange={e => setFormProfile({ ...formProfile, companyName: e.target.value })}
+                        placeholder="e.g. Aurally Developers Pvt Ltd"
+                      />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                      <label>Registered As</label>
+                      <select
+                        value={formProfile.businessType}
+                        onChange={e => setFormProfile({ ...formProfile, businessType: e.target.value })}
+                        className={styles.statusSelect}
+                        style={{ height: '44px', width: '100%', fontSize: '14px' }}
+                      >
+                        <option value="builder">Builder / Developer</option>
+                        <option value="agent">Real Estate Agent / Broker</option>
+                        <option value="contractor">Civil Contractor</option>
+                        <option value="supplier">Material Supplier</option>
+                        <option value="other">Individual Owner</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className={styles.formRowDouble}>
+                    <div className={styles.inputGroup}>
+                      <label>RERA Registration Number</label>
+                      <input
+                        type="text"
+                        value={formProfile.reraNumber}
+                        onChange={e => setFormProfile({ ...formProfile, reraNumber: e.target.value })}
+                        placeholder="e.g. TN/01/Building/2026/0123"
+                      />
+                    </div>
+
+                    <div className={styles.inputGroup}>
+                      <label>WhatsApp Business Number</label>
+                      <input
+                        type="tel"
+                        value={formProfile.whatsappNumber}
+                        onChange={e => setFormProfile({ ...formProfile, whatsappNumber: e.target.value })}
+                        placeholder="e.g. 9840012345 (for instant chat)"
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.inputGroup}>
+                    <label>Company Website Link (Optional)</label>
+                    <input
+                      type="url"
+                      value={formProfile.websiteUrl}
+                      onChange={e => setFormProfile({ ...formProfile, websiteUrl: e.target.value })}
+                      placeholder="e.g. https://www.yourcompany.com"
+                    />
+                  </div>
+
+                  <div className={styles.inputGroup}>
+                    <label>About Your Firm / Developer Bio</label>
+                    <textarea
+                      rows="3"
+                      value={formProfile.bio}
+                      onChange={e => setFormProfile({ ...formProfile, bio: e.target.value })}
+                      placeholder="Describe your ongoing projects, completed square footage, years in business, and quality standards..."
+                      style={{ resize: 'vertical' }}
                     />
                   </div>
 
@@ -369,20 +590,20 @@ export default function AccountPage() {
 
                   <div className={styles.formActions}>
                     <button type="submit" className={styles.saveBtn} disabled={savingProfile}>
-                      {savingProfile ? 'Saving...' : 'Save Profile Changes'}
+                      {savingProfile ? 'Saving Changes...' : 'Save Profile & Brand Info'}
                     </button>
                   </div>
                 </form>
               </div>
             )}
 
-            {/* 2. MY PROPERTIES TAB */}
+            {/* 2. MANAGE PROPERTIES TAB */}
             {activeTab === 'properties' && (
               <div className={styles.tabCard}>
                 <div className={styles.tabHeaderBetween}>
                   <div>
-                    <h2>My Properties</h2>
-                    <p>Track listings you have posted for sale or rent across Tamil Nadu.</p>
+                    <h2>Manage Listings & Performance</h2>
+                    <p>Track live search views, buyer inquiries, and update listing status across Tamil Nadu.</p>
                   </div>
                   <Link href="/sell" className={styles.addPropertyBtn}>
                     + Post Property
@@ -415,9 +636,20 @@ export default function AccountPage() {
                         <div className={styles.propDetails}>
                           <div className={styles.propHeader}>
                             <h4 className={styles.propTitle}>{prop.title}</h4>
-                            <span className={`${styles.statusPill} ${styles[prop.listingStatus || 'published']}`}>
-                              {prop.listingStatus === 'published' ? 'Active' : prop.listingStatus}
-                            </span>
+                            
+                            {/* Fast status switcher */}
+                            <select
+                              className={styles.statusSelect}
+                              value={prop.listingStatus || 'published'}
+                              disabled={updatingPropId === prop.id}
+                              onChange={(e) => handleListingStatusChange(prop.id, e.target.value)}
+                              title="Switch listing visibility"
+                            >
+                              <option value="published">🟢 Active</option>
+                              <option value="pending">🟡 Pending</option>
+                              <option value="sold">🔴 Sold / Closed</option>
+                              <option value="archived">⚪ Inactive / Hidden</option>
+                            </select>
                           </div>
 
                           <div className={styles.propSpecs}>
@@ -425,6 +657,22 @@ export default function AccountPage() {
                             <span>🛏️ {prop.beds} BHK</span>
                             <span>📐 {prop.sqft} sq.ft</span>
                             <span className={styles.propType}>{prop.type}</span>
+                            {prop.reraNumber && <span>🏛️ RERA</span>}
+                          </div>
+
+                          {/* Builder Metrics Row (Views & Leads) */}
+                          <div className={styles.propMetricRow}>
+                            <div className={styles.propMetricItem}>
+                              <span>👁️</span>
+                              <span>Views: <strong>{prop.views || 0}</strong></span>
+                            </div>
+                            <div className={styles.propMetricItem}>
+                              <span>📩</span>
+                              <span>Inquiries: <strong>{prop.leadsCount || 0}</strong></span>
+                            </div>
+                            <div className={styles.propMetricItem} style={{ marginLeft: 'auto', color: '#94a3b8' }}>
+                              <span>📅 {new Date(prop.created_at).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                            </div>
                           </div>
 
                           <div className={styles.propFooter}>
@@ -433,7 +681,10 @@ export default function AccountPage() {
                             </div>
                             <div className={styles.propActions}>
                               <Link href={`/property/${prop.id}`} className={styles.viewLinkBtn}>
-                                View Listing
+                                View
+                              </Link>
+                              <Link href={`/account/property/${prop.id}/edit`} className={styles.editLinkBtn}>
+                                ✏️ Edit
                               </Link>
                               <button
                                 type="button"
@@ -453,32 +704,32 @@ export default function AccountPage() {
               </div>
             )}
 
-            {/* 3. MY ENQUIRIES TAB */}
+            {/* 3. BUYER INQUIRIES & LEAD PIPELINE TAB */}
             {activeTab === 'enquiries' && (
               <div className={styles.tabCard}>
                 <div className={styles.tabHeaderBetween}>
                   <div>
-                    <h2>Enquiries & Lead Requests</h2>
-                    <p>View all property and civil service inquiries sent by you or received on your listings.</p>
+                    <h2>Buyer Inquiries & Leads Pipeline</h2>
+                    <p>Track inquiries received on your properties and manage lead follow-up stages.</p>
                   </div>
                   <div className={styles.filterButtonGroup}>
                     <button
                       className={`${styles.filterBtn} ${enquiryFilter === 'all' ? styles.filterBtnActive : ''}`}
                       onClick={() => setEnquiryFilter('all')}
                     >
-                      All
+                      All ({enquiries.length})
                     </button>
                     <button
                       className={`${styles.filterBtn} ${enquiryFilter === 'received' ? styles.filterBtnActive : ''}`}
                       onClick={() => setEnquiryFilter('received')}
                     >
-                      Received
+                      Received Leads ({enquiries.filter(e => e.enquiry_type === 'received').length})
                     </button>
                     <button
                       className={`${styles.filterBtn} ${enquiryFilter === 'sent' ? styles.filterBtnActive : ''}`}
                       onClick={() => setEnquiryFilter('sent')}
                     >
-                      Sent
+                      Sent ({enquiries.filter(e => e.enquiry_type === 'sent').length})
                     </button>
                   </div>
                 </div>
@@ -486,12 +737,12 @@ export default function AccountPage() {
                 {loadingEnquiries ? (
                   <div className={styles.tabLoading}>
                     <div className={styles.spinner}></div>
-                    <p>Loading enquiries...</p>
+                    <p>Loading inquiries...</p>
                   </div>
                 ) : filteredEnquiries.length === 0 ? (
                   <div className={styles.emptyCard}>
                     <div className={styles.emptyIcon}>📩</div>
-                    <h3>No enquiries to display</h3>
+                    <h3>No inquiries to display</h3>
                     <p>You have not submitted any enquiries yet, or no leads have been received on your listings.</p>
                   </div>
                 ) : (
@@ -501,15 +752,27 @@ export default function AccountPage() {
                         <div className={styles.enquiryTop}>
                           <div>
                             <span className={`${styles.enquiryTypeBadge} ${styles[enq.enquiry_type]}`}>
-                              {enq.enquiry_type === 'sent' ? '↗ My Enquiry Sent' : '↙ Lead Received'}
+                              {enq.enquiry_type === 'sent' ? '↗ My Inquiry Sent' : '↙ Buyer Lead Received'}
                             </span>
                             <h4 className={styles.enquiryTarget}>
-                              {enq.property_title || enq.service_title || enq.service_name || 'General Platform Enquiry'}
+                              {enq.property_title || enq.service_title || enq.service_name || 'General Platform Inquiry'}
                             </h4>
                           </div>
-                          <span className={styles.enquiryStatus}>
-                            Status: {enq.enquiry_status?.toUpperCase()}
-                          </span>
+
+                          {/* Lead status stage selector */}
+                          <select
+                            className={styles.leadStatusSelect}
+                            value={enq.enquiry_status || 'new'}
+                            disabled={updatingEnqId === enq.id}
+                            onChange={(e) => handleEnquiryStatusChange(enq.id, e.target.value)}
+                            title="Update lead follow-up stage"
+                          >
+                            <option value="new">🔴 New Lead</option>
+                            <option value="in_progress">🟡 In Progress</option>
+                            <option value="contacted">🟢 Contacted</option>
+                            <option value="closed">⚪ Closed</option>
+                            <option value="spam">⚠️ Spam</option>
+                          </select>
                         </div>
 
                         <p className={styles.enquiryMessage}>
@@ -530,6 +793,31 @@ export default function AccountPage() {
                             })}
                           </span>
                         </div>
+
+                        {/* Direct buyer contact shortcuts */}
+                        {enq.contact_phone && (
+                          <div className={styles.leadActionsBar}>
+                            <div className={styles.leadContactBtns}>
+                              <a
+                                href={`tel:${enq.contact_phone}`}
+                                className={`${styles.contactPill} ${styles.contactPillCall}`}
+                              >
+                                📞 Call Buyer
+                              </a>
+                              <a
+                                href={`https://wa.me/91${enq.contact_phone.replace(/\D/g, '')}?text=${encodeURIComponent(`Hello ${enq.contact_name}, regarding your inquiry on ${enq.property_title || 'our property'} on Aurally Realty:`)}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className={`${styles.contactPill} ${styles.contactPillWa}`}
+                              >
+                                💬 WhatsApp Buyer
+                              </a>
+                            </div>
+                            <span style={{ fontSize: '11px', color: '#94a3b8' }}>
+                              Stage: <strong>{(enq.enquiry_status || 'new').toUpperCase()}</strong>
+                            </span>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>

@@ -11,7 +11,6 @@ const navLinks = [
   { label: 'Rent', href: '/rent' },
   { label: 'Sell', href: '/sell' },
   { label: 'Materials', href: '/materials' },
-  { label: 'Experts', href: '/experts' },
   { label: 'Services', href: '/services' },
 ];
 
@@ -23,6 +22,8 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
   const [selectedCity, setSelectedCity] = useState('Chennai');
   const [cityDropdownOpen, setCityDropdownOpen] = useState(false);
   const cityDropdownRef = useRef(null);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  const userDropdownRef = useRef(null);
 
   // 99acres Explore modal states
   const [exploreTab, setExploreTab] = useState('buy');
@@ -591,16 +592,39 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
           <div className={styles.rightGroup}>
             {user ? (
               <div className={styles.userInfo}>
-                <Link href="/account" className={styles.userLabel} title="View My Account & Dashboard">
-                  👤 {user.username}
+                <Link href="/account" className={styles.userBadge} title="View My Account & Dashboard">
+                  <span className={styles.userAvatarIcon}>
+                    {user.username ? user.username.charAt(0).toUpperCase() : '👤'}
+                  </span>
+                  <span className={styles.userName}>{user.username}</span>
                 </Link>
                 {user.isAdmin && (
                   <Link href="/admin" className={styles.adminBadge}>
                     Admin
                   </Link>
                 )}
-                <button onClick={handleLogout} className={styles.logoutBtn}>
-                  Logout
+                <button
+                  type="button"
+                  onClick={handleLogout}
+                  className={styles.logoutBtn}
+                  title="Sign out of your account"
+                >
+                  <svg
+                    width="13"
+                    height="13"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className={styles.logoutIcon}
+                  >
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                    <polyline points="16 17 21 12 16 7" />
+                    <line x1="21" y1="12" x2="9" y2="12" />
+                  </svg>
+                  <span>Logout</span>
                 </button>
               </div>
             ) : (

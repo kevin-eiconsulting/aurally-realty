@@ -174,3 +174,55 @@ export const getEnquiries = async (req, res) => {
     return res.status(500).json({ error: 'Failed to fetch enquiries.' });
   }
 };
+
+// PATCH /api/enquiries/:id/status
+// Update enquiry status (Owner of property/service or Admin)
+export const updateEnquiryStatus = async (req, res) => {
+  const { id } = req.params;
+  const { status } = req.body;
+  const userId = req.user.id;
+  const isAdmin = req.user.isAdmin;
+
+  const validStatuses = ['new', 'contacted', 'closed', 'rejected', 'in_progress'];
+  if (!status || !validStatuses.includes(status)) {
+    return res.status(400).json({ error: `Invalid status. Allowed values: ${validStatuses.join(', ')}` });
+  }
+
+  try {
+    const enqRes = await pool.query(`
+      SELECT e.*, p.owner_user_id as property_owner_id, sp.user_id as provider_user_id
+      FROM enquiries e
+      LEFT JOIN properties p ON e.property_id = p.id
+      LEFT JOIN service_listings sl ON e.service_listing_id = sl.id
+      LEFT JOIN service_providers sp ON sl.provider_id = sp.id
+      WHERE e.id = $1;
+    `, [Number(id)]);
+
+    if (enqRes.rows.length === 0) {
+      return res.status(404).json({ error: 'Enquiry not found.' });
+    }
+
+    const enq = enqRes.rows[0];
+    const isRecipient = (enq.property_owner_id && Number(enq.property_owner_id) === Number(userId)) ||
+                        (enq.provider_user_id && Number(enq.provider_user_id) === Number(userId)) ||
+                        (enq.created_by_user_id && Number(enq.created_by_user_id) === Number(userId));
+
+    if (!isAdmin && !isRecipient) {
+      return res.status(403).json({ error: 'Forbidden: You do not have permission to update this enquiry.' });
+    }
+
+    const { rows } = await pool.query(
+      'UPDATE enquiries SET enquiry_status = $1, updated_at = NOW() WHERE id = $2 RETURNING *;',
+      [status, Number(id)]
+    );
+
+    return res.json({
+      success: true,
+      message: `Enquiry status updated to ${status}.`,
+      enquiry: rows[0]
+    });
+  } catch (err) {
+    console.error('Error updating enquiry status:', err);
+    return res.status(500).json({ error: 'Failed to update enquiry status.' });
+  }
+};
