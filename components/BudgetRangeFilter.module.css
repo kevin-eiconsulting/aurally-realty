@@ -1,0 +1,251 @@
+.wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.triggerBtn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px 14px;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #1e293b;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.triggerBtn:hover {
+  border-color: #f26b2b;
+}
+
+.triggerActive {
+  border-color: #f26b2b;
+  box-shadow: 0 0 0 3px rgba(242, 107, 43, 0.12);
+}
+
+.triggerHasValue {
+  border-color: #ea580c;
+  color: #c2410c;
+  background: #fff7ed;
+}
+
+.triggerText {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.chevron {
+  color: #64748b;
+  transition: transform 0.2s ease;
+  flex-shrink: 0;
+  margin-left: 6px;
+}
+
+.chevronOpen {
+  transform: rotate(180deg);
+}
+
+/* Popover Card matching screenshot 4, cleanly sized to fit inside sidebar without bleeding into listings */
+.popover {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  min-width: 260px;
+  max-width: 280px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.14), 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e2e8f0;
+  padding: 14px 14px 10px;
+  z-index: 1000;
+  animation: popoverFade 0.18s ease-out;
+}
+
+@keyframes popoverFade {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Arrow Notch pointing upwards (screenshot 4) */
+.notch {
+  position: absolute;
+  top: -7px;
+  left: 24px;
+  width: 12px;
+  height: 12px;
+  background: #ffffff;
+  border-top: 1px solid #e2e8f0;
+  border-left: 1px solid #e2e8f0;
+  transform: rotate(45deg);
+}
+
+/* Min to Max Dropdowns Row */
+.dropdownsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+
+.selectBox {
+  position: relative;
+  flex: 1;
+}
+
+.selectInput {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  background: #ffffff;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 8px 28px 8px 12px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #0f172a;
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.selectInput:focus {
+  border-color: #0d9488;
+}
+
+.selectChevron {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: #64748b;
+  font-size: 11px;
+}
+
+.toText {
+  font-size: 13px;
+  font-weight: 500;
+  color: #64748b;
+}
+
+/* Dual Range Slider Container */
+.sliderContainer {
+  position: relative;
+  width: 100%;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.sliderTrackBg {
+  position: absolute;
+  width: 100%;
+  height: 4px;
+  background: #e2e8f0;
+  border-radius: 4px;
+}
+
+.sliderTrackHighlight {
+  position: absolute;
+  height: 100%;
+  background: #0d9488; /* Emerald green track matching screenshot 4 */
+  border-radius: 4px;
+}
+
+/* Range Inputs */
+.rangeThumb {
+  position: absolute;
+  width: 100%;
+  pointer-events: none;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  outline: none;
+  margin: 0;
+  height: 4px;
+  top: 14px;
+}
+
+.rangeThumb::-webkit-slider-thumb {
+  pointer-events: auto;
+  appearance: none;
+  -webkit-appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #0d9488; /* Green ring thumb matching screenshot 4 */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.rangeThumb::-webkit-slider-thumb:hover {
+  transform: scale(1.15);
+}
+
+.rangeThumb::-moz-range-thumb {
+  pointer-events: auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 3px solid #0d9488;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+  cursor: pointer;
+}
+
+/* Footer Actions */
+.actionsRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 8px;
+  border-top: 1px solid #f1f5f9;
+}
+
+.clearBtn {
+  background: none;
+  border: none;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 6px;
+}
+
+.clearBtn:hover {
+  color: #ef4444;
+}
+
+.doneBtn {
+  background: none;
+  border: none;
+  color: #dc2626; /* Red "Done" text matching screenshot 4 */
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: opacity 0.15s;
+}
+
+.doneBtn:hover {
+  opacity: 0.8;
+}

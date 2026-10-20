@@ -114,9 +114,12 @@ input, select, textarea { font-family: inherit; outline: none; }
 .form-input::placeholder { color: var(--text-muted); }
 
 .form-select {
-  padding: 13px 16px; border: 2px solid var(--border); border-radius: var(--radius);
+  padding: 13px 40px 13px 16px; border: 2px solid var(--border); border-radius: var(--radius);
   font-size: 15px; color: var(--text-primary); background: var(--white); transition: var(--transition);
   width: 100%; appearance: none; cursor: pointer;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%234b5563' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 14px center;
 }
 .form-select:focus { border-color: var(--orange); box-shadow: 0 0 0 4px rgba(242,107,43,0.08); }
 

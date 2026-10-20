@@ -5,6 +5,8 @@ import Link from 'next/link';
 import HorizontalPropertyCard from '@/components/HorizontalPropertyCard';
 import { fetchProperties } from '@/lib/properties';
 import { TAMIL_NADU_CITIES, CITY_AREAS, PROPERTY_TYPE_OPTIONS } from '@/lib/data';
+import BudgetRangeFilter from '@/components/BudgetRangeFilter';
+import SortDropdown from '@/components/SortDropdown';
 import styles from './page.module.css';
 
 function BuyPageContent() {
@@ -28,7 +30,7 @@ function BuyPageContent() {
   const [maxBudget, setMaxBudget] = useState('');
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [activeQuickFilter, setActiveQuickFilter] = useState('');
-  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'featured');
+  const [sortBy, setSortBy] = useState(searchParams.get('sortBy') || 'relevance');
 
   const [allProps, setAllProps] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -107,11 +109,43 @@ function BuyPageContent() {
     return true;
   });
 
-  // Sorting
+  const getNumericPrice = (p) => {
+    if (typeof p.rawPrice === 'number' && !isNaN(p.rawPrice) && p.rawPrice > 0) return p.rawPrice;
+    const val = Number(p.price) || 0;
+    if (p.priceUnit === 'Cr') return val * 10000000;
+    if (p.priceUnit === 'Lakhs') return val * 100000;
+    return val;
+  };
+
+  const getRatePerSqft = (p) => {
+    if (p.ratePerSqft) return Number(p.ratePerSqft);
+    const sqft = Number(p.sqft) || Number(p.built_up_area) || 0;
+    if (!sqft) return 0;
+    return getNumericPrice(p) / sqft;
+  };
+
+  // Sorting supporting all 6 options
   const sorted = [...filtered].sort((a, b) => {
-    if (sortBy === 'featured') return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
-    if (sortBy === 'price-low') return a.price - b.price;
-    if (sortBy === 'price-high') return b.price - a.price;
+    if (sortBy === 'relevance' || sortBy === 'featured') {
+      return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+    }
+    if (sortBy === 'price-low') {
+      return getNumericPrice(a) - getNumericPrice(b);
+    }
+    if (sortBy === 'price-high') {
+      return getNumericPrice(b) - getNumericPrice(a);
+    }
+    if (sortBy === 'recent') {
+      const dateA = a.created_at ? new Date(a.created_at).getTime() : (a.id || 0);
+      const dateB = b.created_at ? new Date(b.created_at).getTime() : (b.id || 0);
+      return dateB - dateA;
+    }
+    if (sortBy === 'rate-sqft-low') {
+      return getRatePerSqft(a) - getRatePerSqft(b);
+    }
+    if (sortBy === 'rate-sqft-high') {
+      return getRatePerSqft(b) - getRatePerSqft(a);
+    }
     return 0;
   });
 
@@ -144,9 +178,7 @@ function BuyPageContent() {
           <div className={styles.breadcrumb}>
             <Link href="/" className={styles.bcLink}>Home</Link>
             <span className={styles.bcSep}>›</span>
-            <span>Property in {city}</span>
-            <span className={styles.bcSep}>›</span>
-            <span className={styles.bcCurrent}>Flats for Sale</span>
+            <span className={styles.bcCurrent}>Properties in {city}</span>
           </div>
         </div>
       </div>
@@ -232,31 +264,19 @@ function BuyPageContent() {
               {/* Budget */}
               <div className={styles.filterGroup}>
                 <label className={styles.groupLabel}>Budget</label>
-                <div className={styles.budgetRow}>
-                  <select
-                    value={minBudget}
-                    onChange={(e) => setMinBudget(e.target.value)}
-                    className={styles.budgetSelect}
-                  >
-                    <option value="">No min</option>
-                    <option value="20">₹20 Lakh</option>
-                    <option value="40">₹40 Lakh</option>
-                    <option value="60">₹60 Lakh</option>
-                    <option value="100">₹1 Crore</option>
-                  </select>
-                  <span className={styles.budgetTo}>to</span>
-                  <select
-                    value={maxBudget}
-                    onChange={(e) => setMaxBudget(e.target.value)}
-                    className={styles.budgetSelect}
-                  >
-                    <option value="">No max</option>
-                    <option value="50">₹50 Lakh</option>
-                    <option value="80">₹80 Lakh</option>
-                    <option value="150">₹1.5 Crore</option>
-                    <option value="300">₹3 Crore</option>
-                  </select>
-                </div>
+                <BudgetRangeFilter
+                  mode="buy"
+                  minBudget={minBudget}
+                  maxBudget={maxBudget}
+                  onChange={({ min, max }) => {
+                    setMinBudget(min);
+                    setMaxBudget(max);
+                  }}
+                  onClear={() => {
+                    setMinBudget('');
+                    setMaxBudget('');
+                  }}
+                />
               </div>
 
               <div className={styles.filterDivider} />
@@ -321,7 +341,7 @@ function BuyPageContent() {
             {/* 99acres Top Count & Insights */}
             <div className={styles.resultsHeadingWrap}>
               <h1 className={styles.mainTitle}>
-                <strong>{sorted.length} results</strong> | Flats for sale in {area ? `${area}, ${city}` : city}
+                <strong>{sorted.length} results</strong> | Properties in {area ? `${area}, ${city}` : city}
               </h1>
 
               {/* 99acres Horizontal Quick Filters Bar */}
@@ -359,16 +379,7 @@ function BuyPageContent() {
 
                 {/* Sort Dropdown */}
                 <div className={styles.sortWrap}>
-                  <span className={styles.sortLabel}>Sort By :</span>
-                  <select
-                    value={sortBy}
-                    onChange={(e) => setSortBy(e.target.value)}
-                    className={styles.sortSelect}
-                  >
-                    <option value="featured">Featured ⌵</option>
-                    <option value="price-low">Price: Low to High</option>
-                    <option value="price-high">Price: High to Low</option>
-                  </select>
+                  <SortDropdown value={sortBy} onChange={setSortBy} />
                 </div>
               </div>
             </div>

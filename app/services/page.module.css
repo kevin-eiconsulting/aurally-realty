@@ -402,23 +402,26 @@
 
 /* Support Banner */
 .supportBanner {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  border: 1.5px solid #fed7aa;
   border-radius: 20px;
   padding: 44px 36px;
-  color: #ffffff;
+  color: #0f172a;
   text-align: center;
   margin-bottom: 60px;
+  box-shadow: 0 10px 30px rgba(242, 107, 43, 0.08);
 }
 
 .supportContent h2 {
   font-family: 'Outfit', sans-serif;
   font-size: 26px;
   font-weight: 800;
+  color: #0f172a;
   margin-bottom: 12px;
 }
 
 .supportContent p {
-  color: #94a3b8;
+  color: #64748b;
   font-size: 15px;
   max-width: 600px;
   margin: 0 auto 24px;
@@ -440,7 +443,31 @@
   font-weight: 600;
   text-decoration: none;
   font-size: 14px;
-  transition: background 0.2s;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(242, 107, 43, 0.25);
+}
+
+.supportCallBtn:hover {
+  background: #d85718;
+  transform: translateY(-1px);
+}
+
+.supportConsultBtn {
+  padding: 12px 24px;
+  background: #ffffff;
+  color: #334155;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 10px;
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.supportConsultBtn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f172a;
 }
 
 .supportCallBtn:hover {

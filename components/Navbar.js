@@ -29,6 +29,7 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
   const [exploreTab, setExploreTab] = useState('buy');
   const [exploreType, setExploreType] = useState('Residential');
   const [exploreCityInput, setExploreCityInput] = useState('');
+  const [exploreInputFocused, setExploreInputFocused] = useState(false);
   const [showAllDistricts, setShowAllDistricts] = useState(false);
 
 
@@ -122,10 +123,15 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
     setCityDropdownOpen(false);
     setExploreCityInput('');
     setShowAllDistricts(false);
-    const targetPath = exploreTab === 'rent' ? '/rent' : '/buy';
+
+    // If on home page or non-listing pages (materials/services/etc.), stay on current page and update city
+    if (pathname !== '/buy' && pathname !== '/rent') {
+      return;
+    }
+
+    const targetPath = pathname === '/rent' ? '/rent' : '/buy';
     const params = new URLSearchParams();
     if (targetCity && targetCity !== 'All Tamil Nadu') params.set('city', targetCity);
-    if (exploreType === 'Commercial') params.set('type', 'commercial');
     router.push(`${targetPath}?${params.toString()}`);
   };
 
@@ -243,7 +249,7 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
                   aria-label="Select City and Explore Real Estate"
                 >
                   <span className={styles.cityName}>
-                    {selectedCity === 'All Tamil Nadu' ? 'All Tamil Nadu' : `Buy in ${selectedCity}`}
+                    {selectedCity}
                   </span>
                   <svg className={`${styles.cityArrow} ${cityDropdownOpen ? styles.arrowOpen : ''}`} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
                     <polyline points="6 9 12 15 18 9"></polyline>
@@ -254,39 +260,8 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
                   <div className={styles.exploreFlyout}>
                     <h2 className={styles.exploreTitle}>Explore real estate in...</h2>
 
-                    {/* Tabs */}
-                    <div className={styles.exploreTabs}>
-                      {[
-                        { id: 'buy', label: 'Buy' },
-                        { id: 'rent', label: 'Rent / Lease' },
-                        { id: 'plot', label: 'Plots/Land' },
-                        { id: 'pg', label: 'PG / Co-living' },
-                      ].map(tab => (
-                        <button
-                          key={tab.id}
-                          type="button"
-                          className={`${styles.exploreTabBtn} ${exploreTab === tab.id ? styles.exploreTabActive : ''}`}
-                          onClick={() => setExploreTab(tab.id)}
-                        >
-                          {tab.label}
-                          {exploreTab === tab.id && <span className={styles.exploreTabUnderline} />}
-                        </button>
-                      ))}
-                    </div>
-
                     {/* Search Row */}
                     <div className={styles.exploreSearchRow}>
-                      <select
-                        className={styles.exploreTypeSelect}
-                        value={exploreType}
-                        onChange={e => setExploreType(e.target.value)}
-                        aria-label="Select Category"
-                      >
-                        <option value="Residential">Residential</option>
-                        <option value="Commercial">Commercial</option>
-                        <option value="Plots">Plots/Land</option>
-                      </select>
-
                       <div className={styles.exploreInputWrap}>
                         <span className={styles.exploreInputIcon}>🔍</span>
                         <input
@@ -294,11 +269,17 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
                           className={styles.exploreInput}
                           placeholder="City Name"
                           value={exploreCityInput}
-                          onChange={e => setExploreCityInput(e.target.value)}
+                          onFocus={() => setExploreInputFocused(true)}
+                          onChange={e => {
+                            setExploreCityInput(e.target.value);
+                            setExploreInputFocused(true);
+                          }}
                           onKeyDown={e => {
                             if (e.key === 'Enter') {
                               e.preventDefault();
-                              handleExploreSubmit(filteredExploreCities[0] || exploreCityInput);
+                              const target = filteredExploreCities[0] || exploreCityInput;
+                              handleExploreSubmit(target);
+                              setExploreInputFocused(false);
                             }
                           }}
                         />
@@ -307,20 +288,30 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
                       <button
                         type="button"
                         className={styles.exploreSubmitBtn}
-                        onClick={() => handleExploreSubmit(filteredExploreCities[0] || exploreCityInput)}
+                        onClick={() => {
+                          const target = filteredExploreCities[0] || exploreCityInput;
+                          handleExploreSubmit(target);
+                          setExploreInputFocused(false);
+                        }}
                       >
                         Explore
                       </button>
 
-                      {/* City Autocomplete Dropdown if typing */}
-                      {filteredExploreCities.length > 0 && (
+                      {/* City Dropdown: Shows upon clicking the search bar or typing */}
+                      {exploreInputFocused && (
                         <div className={styles.exploreSuggestionsBox}>
-                          {filteredExploreCities.map(city => (
+                          <div style={{ padding: '6px 14px', fontSize: '11px', fontWeight: '700', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                            {exploreCityInput.trim() ? 'Matching Cities' : 'Popular Cities in Tamil Nadu'}
+                          </div>
+                          {(exploreCityInput.trim() ? filteredExploreCities : TAMIL_NADU_CITIES.slice(0, 10)).map(city => (
                             <button
                               key={city}
                               type="button"
                               className={styles.exploreSuggestionItem}
-                              onClick={() => handleExploreSubmit(city)}
+                              onClick={() => {
+                                handleExploreSubmit(city);
+                                setExploreInputFocused(false);
+                              }}
                             >
                               <span>📍 {city}</span>
                               <span style={{ fontSize: '11px', color: '#94a3b8' }}>Tamil Nadu</span>
@@ -360,7 +351,7 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
                             className={styles.recentPillActive}
                             onClick={() => handleExploreSubmit(selectedCity)}
                           >
-                            {exploreTab === 'rent' ? `Rent in ${selectedCity}` : `Buy in ${selectedCity}`}
+                            {selectedCity}
                           </button>
 
                           {/* Top Tamil Nadu Hubs */}
@@ -371,7 +362,7 @@ export default function Navbar({ hideBottomBar = false, logoOnly = false }) {
                               className={styles.recentPillNeutral}
                               onClick={() => handleExploreSubmit(c)}
                             >
-                              {exploreTab === 'rent' ? `Rent in ${c}` : `Buy in ${c}`}
+                              {c}
                             </button>
                           ))}
                         </div>

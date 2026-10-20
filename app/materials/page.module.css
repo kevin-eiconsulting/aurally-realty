@@ -6,8 +6,8 @@
 
 /* ── PAGE WRAPPER ── */
 .page {
-  padding-top: 92px;
-  background: #f3f4f6;
+  padding-top: 72px;
+  background: #f8fafc;
   min-height: 100vh;
 }
 
@@ -32,170 +32,174 @@
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 
-/* ── HERO SECTION ── */
+/* ── HERO SECTION (Light & Clean matching Services page) ── */
 .hero {
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 60%, #0f3460 100%);
-  padding: 52px 0 48px;
+  background: linear-gradient(180deg, #ffffff 0%, #f1f5f9 100%);
+  border-bottom: 1px solid #e2e8f0;
+  padding: 48px 0 36px;
   margin-bottom: 0;
 }
-.heroEyebrow {
+.heroContent {
+  max-width: 860px;
+  margin: 0 auto;
+  text-align: center;
+}
+.heroBadge {
+  display: inline-block;
+  padding: 5px 14px;
+  background: rgba(242, 107, 43, 0.1);
+  color: #ea580c;
+  border: 1px solid rgba(242, 107, 43, 0.25);
+  border-radius: 9999px;
   font-size: 13px;
   font-weight: 600;
-  color: rgba(255,255,255,0.55);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  margin: 0 0 14px;
+  margin-bottom: 16px;
 }
 .heroTitle {
   font-family: 'Outfit', sans-serif;
-  font-size: clamp(30px, 5vw, 52px);
+  font-size: clamp(28px, 4vw, 42px);
   font-weight: 800;
-  color: #ffffff;
-  line-height: 1.15;
-  margin: 0 0 14px;
+  color: #0f172a;
+  line-height: 1.2;
+  margin-bottom: 14px;
 }
 .heroTitle span { color: #f26b2b; }
 .heroSub {
-  font-size: 15px;
-  color: rgba(255,255,255,0.65);
-  max-width: 560px;
-  line-height: 1.65;
-  margin: 0 0 32px;
+  font-size: 16px;
+  color: #64748b;
+  line-height: 1.6;
+  margin-bottom: 28px;
 }
 
-/* ── SEARCH FORM ── */
-.searchForm { max-width: 680px; }
-.searchWrap {
+/* ── SEARCH FORM (Services style) ── */
+.searchContainer {
+  max-width: 620px;
+  margin: 0 auto 12px;
+}
+.searchBar {
   display: flex;
   align-items: center;
   background: #ffffff;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  border: 2px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 12px 18px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease;
+}
+.searchBar:focus-within {
+  border-color: #f26b2b;
+  box-shadow: 0 4px 24px rgba(242, 107, 43, 0.15);
 }
 .searchIcon {
-  padding: 0 12px 0 16px;
-  font-size: 16px;
+  font-size: 18px;
+  margin-right: 10px;
+  color: #94a3b8;
 }
 .searchInput {
   flex: 1;
   border: none;
   outline: none;
   font-size: 15px;
-  padding: 14px 8px;
-  font-family: 'Inter', sans-serif;
-  color: #1a1a2e;
+  color: #1e293b;
+  font-family: inherit;
   background: transparent;
 }
-.searchInput::placeholder { color: #9ca3af; }
-.searchClear {
-  padding: 0 8px;
-  background: transparent;
+.searchInput::placeholder { color: #94a3b8; }
+.clearBtn {
+  background: none;
   border: none;
-  color: #9ca3af;
-  cursor: pointer;
   font-size: 14px;
-  line-height: 1;
+  color: #94a3b8;
+  cursor: pointer;
+  padding: 4px 8px;
 }
-.searchClear:hover { color: #f26b2b; }
+.clearBtn:hover { color: #f26b2b; }
 .searchBtn {
   background: #f26b2b;
   color: #ffffff;
   border: none;
-  padding: 14px 24px;
+  padding: 10px 22px;
   font-size: 14px;
   font-weight: 700;
-  font-family: 'Inter', sans-serif;
+  border-radius: 10px;
   cursor: pointer;
   transition: background 0.2s;
   white-space: nowrap;
 }
 .searchBtn:hover { background: #d9561f; }
 
-/* ── TWO-COLUMN LAYOUT ── */
-.layout {
-  display: grid;
-  grid-template-columns: 260px 1fr;
-  gap: 24px;
-  padding: 32px 0 60px;
-  align-items: start;
+/* ── CATEGORY HORIZONTAL SCROLL TABS (Services style) ── */
+.tabsWrapper {
+  margin: 24px 0 28px;
+  overflow: hidden;
 }
-@media (max-width: 860px) {
-  .layout { grid-template-columns: 1fr; }
+.tabsScroll {
+  display: flex;
+  gap: 10px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
 }
-
-/* ── SIDEBAR ── */
-.sidebar {
-  background: #ffffff;
-  border-radius: 16px;
-  padding: 20px 16px;
-  border: 1px solid #e5e7eb;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  position: sticky;
-  top: 100px;
-  max-height: calc(100vh - 120px);
-  overflow-y: auto;
+.tabsScroll::-webkit-scrollbar {
+  height: 4px;
 }
-.sidebar::-webkit-scrollbar { width: 4px; }
-.sidebar::-webkit-scrollbar-track { background: transparent; }
-.sidebar::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 4px; }
-
-.sidebarTitle {
-  font-family: 'Outfit', sans-serif;
-  font-size: 13px;
-  font-weight: 700;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0 0 12px 6px;
+.tabsScroll::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
 }
-
-.catPill {
+.tabBtn {
   display: flex;
   align-items: center;
   gap: 8px;
-  width: 100%;
-  padding: 9px 10px;
-  border: none;
-  background: transparent;
-  border-radius: 10px;
+  padding: 10px 18px;
+  background: #ffffff;
+  border: 1.5px solid #e2e8f0;
+  border-radius: 9999px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: #475569;
   cursor: pointer;
-  text-align: left;
-  transition: all 0.15s;
-  color: #374151;
-  margin-bottom: 2px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
-.catPill:hover {
-  background: #fff7f2;
+.tabBtn:hover {
+  border-color: #f26b2b;
   color: #f26b2b;
+  background: #fff7ed;
+  transform: translateY(-1px);
 }
-.catPillActive {
-  background: #fff1e8;
-  color: #f26b2b;
-  font-weight: 600;
+.tabBtnActive {
+  background: linear-gradient(135deg, #f26b2b 0%, #ea580c 100%) !important;
+  color: #ffffff !important;
+  border-color: #ea580c !important;
+  box-shadow: 0 4px 14px rgba(242, 107, 43, 0.35) !important;
 }
-.catIcon { font-size: 15px; flex-shrink: 0; }
-.catLabel {
-  flex: 1;
-  font-size: 13px;
-  line-height: 1.3;
+.tabIcon {
+  font-size: 16px;
 }
-.catCount {
-  font-size: 11px;
-  background: #f3f4f6;
-  color: #6b7280;
+.tabCount {
+  display: inline-block;
   padding: 2px 7px;
-  border-radius: 20px;
-  font-weight: 600;
-  flex-shrink: 0;
+  border-radius: 9999px;
+  font-size: 11px;
+  font-weight: 700;
+  background: #f1f5f9;
+  color: #64748b;
 }
-.catPillActive .catCount {
-  background: #f26b2b;
+.tabBtnActive .tabCount {
+  background: rgba(255, 255, 255, 0.25);
   color: #ffffff;
 }
 
-/* ── MAIN CONTENT ── */
-.main { min-width: 0; }
+/* ── CATALOG SECTION ── */
+.catalogSection {
+  padding-bottom: 60px;
+}
+.main {
+  min-width: 0;
+}
 
 .mainHeader {
   display: flex;

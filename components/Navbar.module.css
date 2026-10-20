@@ -949,8 +949,8 @@
 }
 
 .exploreSearchRow:focus-within {
-  border-color: #0284c7;
-  box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.12);
+  border-color: #f26b2b;
+  box-shadow: 0 0 0 3px rgba(242, 107, 43, 0.14);
 }
 
 .exploreTypeSelect {
@@ -993,7 +993,7 @@
 }
 
 .exploreSubmitBtn {
-  background: #0284c7;
+  background: #f26b2b;
   color: #ffffff;
   border: none;
   padding: 8px 20px;
@@ -1006,7 +1006,7 @@
 }
 
 .exploreSubmitBtn:hover {
-  background: #0369a1;
+  background: #d85718;
 }
 
 .exploreSuggestionsBox {
@@ -1040,8 +1040,8 @@
 }
 
 .exploreSuggestionItem:hover {
-  background: #f0f9ff;
-  color: #0284c7;
+  background: #fff7ed;
+  color: #f26b2b;
 }
 
 .recentSection {
@@ -1063,8 +1063,8 @@
 
 .recentPillActive {
   background: #ffffff;
-  border: 1.5px solid #0284c7;
-  color: #0284c7;
+  border: 1.5px solid #f26b2b;
+  color: #f26b2b;
   border-radius: 20px;
   padding: 6px 16px;
   font-size: 13px;
@@ -1074,7 +1074,7 @@
 }
 
 .recentPillActive:hover {
-  background: #f0f9ff;
+  background: #fff7ed;
   transform: translateY(-1px);
 }
 
@@ -1128,11 +1128,11 @@
 }
 
 .footerLink:hover {
-  color: #0284c7;
+  color: #f26b2b;
 }
 
 .footerRightLink {
-  color: #0284c7;
+  color: #f26b2b;
   background: none;
   border: none;
   cursor: pointer;
@@ -1142,6 +1142,10 @@
   display: flex;
   align-items: center;
   gap: 4px;
+}
+
+.footerRightLink:hover {
+  color: #d85718;
 }
 
 .districtsGridModal {

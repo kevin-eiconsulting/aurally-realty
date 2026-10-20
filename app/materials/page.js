@@ -1,6 +1,7 @@
 'use client';
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { apiFetch } from '@/lib/api';
+import { FALLBACK_MATERIALS, FALLBACK_MATERIAL_CATEGORIES } from '@/lib/materials-data';
 import styles from './page.module.css';
 
 const CATEGORY_ICONS = {
@@ -33,52 +34,54 @@ const CATEGORY_ICONS = {
 };
 
 export default function MaterialsPage() {
-  const [categories, setCategories] = useState([]);
-  const [products, setProducts] = useState([]);
+  const [categories, setCategories] = useState(FALLBACK_MATERIAL_CATEGORIES);
+  const [products, setProducts] = useState(FALLBACK_MATERIALS);
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [productsLoading, setProductsLoading] = useState(false);
-  const [error, setError] = useState(null);
 
-  // Fetch categories once on mount
+  // Fetch from API in background, upgrade if live server available
   useEffect(() => {
-    apiFetch('/materials/categories')
-      .then(data => setCategories(data || []))
-      .catch(err => {
-        console.warn('Could not load material categories:', err.message);
-        setCategories([]);
-      })
-      .finally(() => setLoading(false));
+    Promise.all([
+      apiFetch('/materials/categories').catch(() => null),
+      apiFetch('/materials?limit=1000').catch(() => null)
+    ]).then(([catData, prodData]) => {
+      if (Array.isArray(catData) && catData.length > 0) {
+        setCategories(catData);
+      }
+      if (Array.isArray(prodData) && prodData.length > 0) {
+        setProducts(prodData);
+      }
+    }).catch(() => {
+      // Fallback data already active
+    });
   }, []);
 
-  // Fetch products when category or search changes
-  const fetchProducts = useCallback(async (category, q) => {
-    setProductsLoading(true);
-    try {
-      const params = new URLSearchParams({ limit: 96, offset: 0 });
-      if (category && category !== 'all') params.set('category', category);
-      if (q && q.trim()) params.set('q', q.trim());
-      const data = await apiFetch(`/materials?${params.toString()}`);
-      setProducts(data || []);
-      setError(null);
-    } catch (err) {
-      console.warn('Could not load materials:', err.message);
-      setError('Unable to connect to the server. Please try again later.');
-      setProducts([]);
-    } finally {
-      setProductsLoading(false);
-    }
-  }, []);
+  // Compute category product counts dynamically
+  const categoryCounts = useMemo(() => {
+    const counts = {};
+    products.forEach(p => {
+      counts[p.subcategory_slug] = (counts[p.subcategory_slug] || 0) + 1;
+    });
+    return counts;
+  }, [products]);
 
-  useEffect(() => {
-    fetchProducts(selectedCategory, searchQuery);
-  }, [selectedCategory, fetchProducts]);
-
-  const handleSearch = (e) => {
-    e.preventDefault();
-    fetchProducts(selectedCategory, searchQuery);
-  };
+  // Real-time instant filtering as user types (like Services page)
+  const filteredProducts = useMemo(() => {
+    const q = searchQuery.toLowerCase().trim();
+    return products.filter(p => {
+      const matchCat = selectedCategory === 'all' || p.subcategory_slug === selectedCategory;
+      if (!matchCat) return false;
+      if (!q) return true;
+      const specs = p.specifications || {};
+      return (
+        (p.name && p.name.toLowerCase().includes(q)) ||
+        (p.brand && p.brand.toLowerCase().includes(q)) ||
+        (p.subcategory_name && p.subcategory_name.toLowerCase().includes(q)) ||
+        (specs.grade && specs.grade.toLowerCase().includes(q)) ||
+        (specs.is_bis_standard && specs.is_bis_standard.toLowerCase().includes(q))
+      );
+    });
+  }, [products, selectedCategory, searchQuery]);
 
   const handleCategoryClick = (slug) => {
     setSelectedCategory(slug);
@@ -90,17 +93,6 @@ export default function MaterialsPage() {
     window.open(`https://wa.me/?text=${msg}`, '_blank');
   };
 
-  if (loading) {
-    return (
-      <div className={styles.page}>
-        <div className={styles.loadingHero}>
-          <div className={styles.spinner} />
-          <p>Loading Building Materials...</p>
-        </div>
-      </div>
-    );
-  }
-
   const selectedCatName = selectedCategory === 'all'
     ? 'All Materials'
     : categories.find(c => c.slug === selectedCategory)?.name || 'Materials';
@@ -110,66 +102,71 @@ export default function MaterialsPage() {
       {/* ─── HERO ─── */}
       <div className={styles.hero}>
         <div className="container">
-          <p className={styles.heroEyebrow}>🏗️ Aurally Realty Marketplace</p>
-          <h1 className={styles.heroTitle}>
-            Building <span>Materials</span>
-          </h1>
-          <p className={styles.heroSub}>
-            Cement, steel, tiles, plumbing, electrical and 26 more categories — sourced from verified suppliers.
-          </p>
+          <div className={styles.heroContent}>
+            <span className={styles.heroBadge}>🏗️ Aurally Realty Marketplace</span>
+            <h1 className={styles.heroTitle}>
+              Verified Quality <span>Building Materials</span>
+            </h1>
+            <p className={styles.heroSub}>
+              Cement, steel, tiles, plumbing, electrical, and 26 more categories — wholesale & retail prices sourced directly from verified Tamil Nadu suppliers.
+            </p>
 
-          {/* Search bar */}
-          <form className={styles.searchForm} onSubmit={handleSearch}>
-            <div className={styles.searchWrap}>
-              <span className={styles.searchIcon}>🔍</span>
-              <input
-                type="text"
-                className={styles.searchInput}
-                placeholder="Search products, brands, grades..."
-                value={searchQuery}
-                onChange={e => setSearchQuery(e.target.value)}
-              />
-              {searchQuery && (
-                <button
-                  type="button"
-                  className={styles.searchClear}
-                  onClick={() => { setSearchQuery(''); fetchProducts(selectedCategory, ''); }}
-                >✕</button>
-              )}
-              <button type="submit" className={styles.searchBtn}>Search</button>
+            {/* Instant Search Bar without search icon or search button */}
+            <div className={styles.searchContainer}>
+              <div className={styles.searchBar}>
+                <input
+                  type="text"
+                  className={styles.searchInput}
+                  placeholder="Search products, brands, grades (e.g. UltraTech, Fe550D TMT, Kajaria)..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                />
+                {searchQuery && (
+                  <button
+                    type="button"
+                    className={styles.clearBtn}
+                    onClick={() => setSearchQuery('')}
+                    aria-label="Clear search"
+                  >✕</button>
+                )}
+              </div>
             </div>
-          </form>
+          </div>
         </div>
       </div>
 
-      {/* ─── MAIN LAYOUT ─── */}
+      {/* ─── MAIN CONTENT ─── */}
       <div className="container">
-        <div className={styles.layout}>
-
-          {/* ─── SIDEBAR ─── */}
-          <aside className={styles.sidebar}>
-            <h3 className={styles.sidebarTitle}>Categories</h3>
+        {/* Category Horizontal Scroll Tabs */}
+        <div className={styles.tabsWrapper}>
+          <div className={styles.tabsScroll}>
             <button
-              className={`${styles.catPill} ${selectedCategory === 'all' ? styles.catPillActive : ''}`}
+              type="button"
+              className={`${styles.tabBtn} ${selectedCategory === 'all' ? styles.tabBtnActive : ''}`}
               onClick={() => handleCategoryClick('all')}
             >
-              <span className={styles.catIcon}>🏬</span>
-              <span className={styles.catLabel}>All Materials</span>
-              <span className={styles.catCount}>{categories.reduce((a, c) => a + (c.product_count || 0), 0)}</span>
+              <span className={styles.tabIcon}>⚡</span>
+              <span>All Materials</span>
+              <span className={styles.tabCount}>
+                {products.length}
+              </span>
             </button>
             {categories.map(cat => (
               <button
                 key={cat.slug}
-                className={`${styles.catPill} ${selectedCategory === cat.slug ? styles.catPillActive : ''}`}
+                type="button"
+                className={`${styles.tabBtn} ${selectedCategory === cat.slug ? styles.tabBtnActive : ''}`}
                 onClick={() => handleCategoryClick(cat.slug)}
               >
-                <span className={styles.catIcon}>{CATEGORY_ICONS[cat.slug] || '📦'}</span>
-                <span className={styles.catLabel}>{cat.name}</span>
-                <span className={styles.catCount}>{cat.product_count || 0}</span>
+                <span className={styles.tabIcon}>{CATEGORY_ICONS[cat.slug] || '📦'}</span>
+                <span>{cat.name}</span>
+                <span className={styles.tabCount}>{categoryCounts[cat.slug] || 0}</span>
               </button>
             ))}
-          </aside>
+          </div>
+        </div>
 
+        <div className={styles.catalogSection}>
           {/* ─── PRODUCT GRID ─── */}
           <main className={styles.main}>
             <div className={styles.mainHeader}>
@@ -178,23 +175,11 @@ export default function MaterialsPage() {
                 {searchQuery && <span className={styles.searchBadge}> — "{searchQuery}"</span>}
               </h2>
               <span className={styles.resultCount}>
-                {productsLoading ? 'Loading...' : `${products.length} product${products.length !== 1 ? 's' : ''}`}
+                {`${filteredProducts.length} product${filteredProducts.length !== 1 ? 's' : ''}`}
               </span>
             </div>
 
-            {error && (
-              <div className={styles.errorBanner}>
-                ⚠️ {error}
-              </div>
-            )}
-
-            {productsLoading ? (
-              <div className={styles.gridLoading}>
-                {Array.from({ length: 8 }).map((_, i) => (
-                  <div key={i} className={styles.skeletonCard} />
-                ))}
-              </div>
-            ) : products.length === 0 ? (
+            {filteredProducts.length === 0 ? (
               <div className={styles.emptyState}>
                 <div className={styles.emptyIcon}>🔍</div>
                 <h3>No products found</h3>
@@ -206,7 +191,7 @@ export default function MaterialsPage() {
                 {(searchQuery || selectedCategory !== 'all') && (
                   <button
                     className={styles.resetBtn}
-                    onClick={() => { setSelectedCategory('all'); setSearchQuery(''); fetchProducts('all', ''); }}
+                    onClick={() => { setSelectedCategory('all'); setSearchQuery(''); }}
                   >
                     View all materials
                   </button>
@@ -214,7 +199,7 @@ export default function MaterialsPage() {
               </div>
             ) : (
               <div className={styles.grid}>
-                {products.map(product => {
+                {filteredProducts.map(product => {
                   const specs = product.specifications || {};
                   return (
                     <div key={product.id} className={styles.card}>
@@ -241,23 +226,43 @@ export default function MaterialsPage() {
                         </div>
                       )}
                       {specs.moq && (
-                        <p className={styles.cardMoq}>
+                        <div className={styles.cardMoq}>
                           <span className={styles.metaLabel}>MOQ:</span> {specs.moq}
-                          {specs.pack_size && ` · Pack: ${specs.pack_size}`}
-                        </p>
+                        </div>
                       )}
-                      <button
-                        className={styles.quoteBtn}
-                        onClick={() => handleQuoteRequest(product)}
-                      >
-                        📩 Request Quote
-                      </button>
+                      <div className={styles.cardActions}>
+                        <button
+                          type="button"
+                          className={styles.quoteBtn}
+                          onClick={() => handleQuoteRequest(product)}
+                        >
+                          Request Wholesale Quote
+                        </button>
+                      </div>
                     </div>
                   );
                 })}
               </div>
             )}
           </main>
+        </div>
+
+        {/* ─── FOOTER BANNER ─── */}
+        <div className={styles.supportBanner}>
+          <div className={styles.supportContent}>
+            <h2>Bulk Procurement & Site Delivery Across Tamil Nadu</h2>
+            <p>
+              Direct factory rates, batch test certificates, GST invoices, and transit insurance for construction projects across Chennai, Coimbatore, Madurai, Hosur, and all TN districts.
+            </p>
+          </div>
+          <a
+            href="https://wa.me/?text=Hi%2C%20I%20have%20a%20bulk%20building%20material%20procurement%20requirement."
+            target="_blank"
+            rel="noopener noreferrer"
+            className={styles.supportBtn}
+          >
+            Contact Procurement Desk
+          </a>
         </div>
       </div>
     </div>

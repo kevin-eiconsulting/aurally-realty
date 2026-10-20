@@ -93,7 +93,9 @@ export default function SellPage() {
   const handleCityChange = (newCity) => {
     setForm(f => ({
       ...f,
-      city: newCity
+      city: newCity,
+      area: '',
+      customArea: ''
     }));
   };
 
@@ -219,7 +221,7 @@ export default function SellPage() {
     }
     setSubmitting(true);
     try {
-      const effectiveArea = form.area?.trim() || 'Locality';
+      const effectiveArea = form.area === 'Other' ? (form.customArea?.trim() || 'Locality') : (form.area?.trim() || 'Locality');
 
       const payload = {
         ...form,
@@ -338,8 +340,8 @@ export default function SellPage() {
     );
   }
 
-  const effectiveAreaLabel = form.area?.trim() || 'Locality';
-  const canProceedStep1 = form.propertyType && form.city?.trim() && form.area?.trim() && form.address?.trim() && form.title?.trim();
+  const effectiveAreaLabel = form.area === 'Other' && form.customArea?.trim() ? form.customArea.trim() : (form.area || 'Locality');
+  const canProceedStep1 = form.propertyType && form.city?.trim() && (form.area === 'Other' ? form.customArea?.trim() : form.area?.trim()) && form.address?.trim() && form.title?.trim();
   const hasPhotos = form.images && form.images.length > 0;
   const canProceedStep2 = form.sqft && form.price && hasPhotos;
 
@@ -401,40 +403,49 @@ export default function SellPage() {
 
                   <div className="form-group">
                     <label className="form-label">City (Tamil Nadu) *</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      list="tn-sell-cities"
+                    <select
+                      className="form-select"
                       required
-                      placeholder="Type or select city..."
                       value={form.city}
                       onChange={e => handleCityChange(e.target.value)}
-                    />
-                    <datalist id="tn-sell-cities">
+                    >
+                      <option value="">Select City</option>
                       {TAMIL_NADU_CITIES.map(c => (
-                        <option key={c} value={c} />
+                        <option key={c} value={c}>{c}</option>
                       ))}
-                    </datalist>
+                    </select>
                   </div>
 
                   <div className="form-group">
                     <label className="form-label">Area / Locality *</label>
-                    <input
-                      type="text"
-                      className="form-input"
-                      list="tn-sell-areas"
+                    <select
+                      className="form-select"
                       required
-                      placeholder={`Type area in ${form.city || 'Tamil Nadu'}...`}
                       value={form.area}
                       onChange={e => update('area', e.target.value)}
-                    />
-                    <datalist id="tn-sell-areas">
+                    >
+                      <option value="">Select Area in {form.city || 'Tamil Nadu'}</option>
                       {(CITY_AREAS[form.city] || []).map(a => (
-                        <option key={a} value={a} />
+                        <option key={a} value={a}>{a}</option>
                       ))}
-                    </datalist>
+                      <option value="Other">+ Other / Custom Locality</option>
+                    </select>
                   </div>
                 </div>
+
+                {form.area === 'Other' && (
+                  <div className="form-group" style={{ marginTop: '4px' }}>
+                    <label className="form-label">Enter Custom Locality Name in {form.city} *</label>
+                    <input
+                      className="form-input"
+                      type="text"
+                      placeholder={`e.g. Colony, Nagar, or specific layout in ${form.city}`}
+                      required
+                      value={form.customArea}
+                      onChange={e => update('customArea', e.target.value)}
+                    />
+                  </div>
+                )}
 
                 <div className="form-group">
                   <label className="form-label">Full Address / Project Name *</label>

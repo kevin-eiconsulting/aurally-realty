@@ -9,12 +9,12 @@ import { PROPERTIES, TAMIL_NADU_CITIES, CITY_AREAS } from '@/lib/data';
 import styles from './page.module.css';
 
 const TAMIL_NADU_HUBS = [
-  { name: 'Chennai', count: '2,450+', tag: 'Capital & IT Corridor', img: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80' },
-  { name: 'Coimbatore', count: '1,180+', tag: 'Manchester of South India', img: 'https://images.unsplash.com/photo-1596008194705-2091cd6764d4?w=600&q=80' },
-  { name: 'Madurai', count: '690+', tag: 'Cultural & Commercial Hub', img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&q=80' },
-  { name: 'Trichy', count: '430+', tag: 'Central Transit & Heritage', img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80' },
-  { name: 'Salem', count: '360+', tag: 'Industrial & Scenic Foothills', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80' },
-  { name: 'Hosur', count: '280+', tag: 'Fastest Growing Tech Hub', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=80' }
+  { name: 'Chennai', tag: 'Capital & IT Corridor', img: 'https://images.unsplash.com/photo-1582510003544-4d00b7f74220?w=600&q=80' },
+  { name: 'Coimbatore', tag: 'Manchester of South India', img: 'https://images.unsplash.com/photo-1596008194705-2091cd6764d4?w=600&q=80' },
+  { name: 'Madurai', tag: 'Cultural & Commercial Hub', img: 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?w=600&q=80' },
+  { name: 'Trichy', tag: 'Central Transit & Heritage', img: 'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=600&q=80' },
+  { name: 'Salem', tag: 'Industrial & Scenic Foothills', img: 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?w=600&q=80' },
+  { name: 'Hosur', tag: 'Fastest Growing Tech Hub', img: 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?w=600&q=80' }
 ];
 
 export default function HomePage() {
@@ -26,6 +26,8 @@ export default function HomePage() {
   const [searchBudget, setSearchBudget] = useState('');
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [cityCounts, setCityCounts] = useState({});
+  const [selectedCityCount, setSelectedCityCount] = useState(null);
 
   // Sync city with Navbar / localStorage / custom event
   useEffect(() => {
@@ -52,6 +54,7 @@ export default function HomePage() {
       .then(data => {
         if (data && data.length > 0) {
           setProperties(data);
+          setSelectedCityCount(data.length);
         } else {
           // fallback to mock properties matching city
           const fallback = PROPERTIES.filter(p => {
@@ -59,14 +62,33 @@ export default function HomePage() {
             const matchesStatus = p.status === filterStatus;
             return matchesCity && matchesStatus;
           });
-          setProperties(fallback.length > 0 ? fallback : PROPERTIES.slice(0, 4));
+          const resolved = fallback.length > 0 ? fallback : PROPERTIES.slice(0, 4);
+          setProperties(resolved);
+          setSelectedCityCount(resolved.length);
         }
       })
       .catch(() => {
         setProperties(PROPERTIES.slice(0, 4));
+        setSelectedCityCount(PROPERTIES.slice(0, 4).length);
       })
       .finally(() => setLoading(false));
   }, [selectedCity, searchTab]);
+
+  // Fetch per-city counts for hub cards
+  useEffect(() => {
+    const hubNames = TAMIL_NADU_HUBS.map(h => h.name);
+    Promise.all(
+      hubNames.map(city =>
+        fetchProperties({ city, status: 'for-sale' })
+          .then(data => ({ city, count: data?.length ?? 0 }))
+          .catch(() => ({ city, count: 0 }))
+      )
+    ).then(results => {
+      const map = {};
+      results.forEach(r => { map[r.city] = r.count; });
+      setCityCounts(map);
+    });
+  }, []);
 
   const handleCitySelect = (city) => {
     setSelectedCity(city);
@@ -93,11 +115,11 @@ export default function HomePage() {
     <div className={styles.page}>
       {/* ===== HERO SEARCH SECTION (MAGICBRICKS STYLE) ===== */}
       <section className={styles.heroSection}>
-        {/* Far-Left Architectural Collage (bleeding off the far-left corner) */}
+        {/* Far-Left Architectural Showcase */}
         <div className={styles.farLeftCollageWrap}>
           <img
-            src="/hero-building-collage-clean.png"
-            alt=""
+            src="/hero-luxury-residence.jpg"
+            alt="Premium Residential Architecture"
             className={styles.farLeftCollageImg}
           />
         </div>
@@ -126,7 +148,7 @@ export default function HomePage() {
             {/* Centered Search Box Area */}
             <div className={styles.searchHeroCol}>
               <h1 className={styles.heroHeading}>
-                Start your <span className={styles.hashtag}>#DreamHome</span> Journey
+                Find Your Perfect <span className={styles.hashtag}>Home</span> with Aurally
               </h1>
               <p className={styles.heroSubText}>
                 {selectedCity === 'All Tamil Nadu'
@@ -248,7 +270,7 @@ export default function HomePage() {
           <div className={styles.spotlightGrid}>
             {/* Card 1: Stat Count Card */}
             <div className={styles.statActionCard}>
-              <div className={styles.statLargeNumber}>7K+</div>
+              <div className={styles.statLargeNumber}>{selectedCityCount !== null ? selectedCityCount : '...'}</div>
               <div className={styles.statCardTitle}>properties listed for you</div>
               <Link href={`/${searchTab}?city=${encodeURIComponent(selectedCity)}`} className={styles.cardActionLink}>
                 Continue last search →
@@ -347,7 +369,7 @@ export default function HomePage() {
                   <div className={styles.cityCardBody}>
                     <div className={styles.cityNameRow}>
                       <h3 className={styles.cityHubTitle}>{hub.name}</h3>
-                      <span className={styles.cityPropCount}>{hub.count}</span>
+                      <span className={styles.cityPropCount}>{cityCounts[hub.name] != null ? cityCounts[hub.name] : '...'}</span>
                     </div>
                     <p className={styles.cityHubTag}>{hub.tag}</p>
                     <div className={styles.cityCardFooter}>

@@ -3,6 +3,7 @@ import { useState, useEffect, useMemo } from 'react';
 import Link from 'next/link';
 import { apiFetch } from '@/lib/api';
 import { getCurrentUser } from '@/lib/auth';
+import { FALLBACK_SERVICES, FALLBACK_SERVICE_CATEGORIES } from '@/lib/services-data';
 import styles from './page.module.css';
 
 const SERVICE_ICONS = {
@@ -78,13 +79,16 @@ export default function ServicesPage() {
       }
     }).catch(() => {});
 
-    // Fetch categories and services
+    // Fetch categories and services with fallback
     Promise.all([
       apiFetch('/services/categories').catch(() => []),
       apiFetch('/services').catch(() => [])
     ]).then(([catData, servData]) => {
-      if (Array.isArray(catData)) setCategories(catData);
-      if (Array.isArray(servData)) setServices(servData);
+      setCategories(Array.isArray(catData) && catData.length > 0 ? catData : FALLBACK_SERVICE_CATEGORIES);
+      setServices(Array.isArray(servData) && servData.length > 0 ? servData : FALLBACK_SERVICES);
+    }).catch(() => {
+      setCategories(FALLBACK_SERVICE_CATEGORIES);
+      setServices(FALLBACK_SERVICES);
     }).finally(() => {
       setLoading(false);
     });
@@ -249,14 +253,7 @@ export default function ServicesPage() {
 
                   <div className={styles.cardMeta}>
                     <div className={styles.priceBadge}>
-                      {service.min_starting_price ? (
-                        <>
-                          <span className={styles.priceLabel}>Starting from</span>
-                          <span className={styles.priceValue}>₹{Number(service.min_starting_price).toLocaleString('en-IN')}</span>
-                        </>
-                      ) : (
-                        <span className={styles.quoteOnly}>Quote on Request</span>
-                      )}
+                      <span className={styles.quoteOnly}>Quote on Request</span>
                     </div>
                     {service.providers_count > 0 && (
                       <span className={styles.providersCount}>
