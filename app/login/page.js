@@ -141,7 +141,7 @@ export default function LoginPage() {
             </p>
 
             <p className={styles.agentLink}>
-              Are you an agent? <Link href="/admin/login" className={styles.signupLink}>Agent Login →</Link>
+              Are you an agent? <Link href="/admin" className={styles.signupLink}>Agent Login →</Link>
             </p>
           </div>
         </div>
