@@ -62,14 +62,20 @@ export default function HomePage() {
             const matchesStatus = p.status === filterStatus;
             return matchesCity && matchesStatus;
           });
-          const resolved = fallback.length > 0 ? fallback : PROPERTIES.slice(0, 4);
+          const resolved = filterCity ? fallback : (fallback.length > 0 ? fallback : PROPERTIES.slice(0, 4));
           setProperties(resolved);
           setSelectedCityCount(resolved.length);
         }
       })
       .catch(() => {
-        setProperties(PROPERTIES.slice(0, 4));
-        setSelectedCityCount(PROPERTIES.slice(0, 4).length);
+        const fallback = PROPERTIES.filter(p => {
+          const matchesCity = !filterCity || p.city?.toLowerCase() === filterCity.toLowerCase();
+          const matchesStatus = p.status === filterStatus;
+          return matchesCity && matchesStatus;
+        });
+        const resolved = filterCity ? fallback : (fallback.length > 0 ? fallback : PROPERTIES.slice(0, 4));
+        setProperties(resolved);
+        setSelectedCityCount(resolved.length);
       })
       .finally(() => setLoading(false));
   }, [selectedCity, searchTab]);

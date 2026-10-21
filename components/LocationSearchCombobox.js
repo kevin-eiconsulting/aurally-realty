@@ -33,12 +33,12 @@ export default function LocationSearchCombobox({
   // Update suggestions whenever inputValue or selectedCity changes
   useEffect(() => {
     if (inputValue.trim().length > 0) {
-      const results = searchTamilNaduLocations(inputValue, selectedCity, 10);
+      const results = searchTamilNaduLocations(inputValue, selectedCity, 50);
       setSuggestions(results);
     } else {
-      // Empty input: provide popular localities in active city
+      // Empty input: provide all localities in active city
       const currentCityAreas = CITY_AREAS[selectedCity] || CITY_AREAS['Hosur'] || [];
-      const defaultSuggestions = currentCityAreas.slice(0, 8).map(loc => ({
+      const defaultSuggestions = currentCityAreas.map(loc => ({
         locality: loc,
         city: selectedCity,
         label: `${loc}, ${selectedCity}`,
